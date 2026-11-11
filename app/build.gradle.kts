@@ -33,6 +33,12 @@ android {
         // For app/src/androidTest (SmokeTest): read its warning before
         // running it on a phone in use.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // JP fork: the AivisSpeech key lives in the git-ignored local.properties (tts.key).
+        val jpLocal = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+        }
+        buildConfigField("String", "TTS_KEY", "\"${jpLocal.getProperty("tts.key", "")}\"")
+        buildConfigField("String", "TTS_URL", "\"https://tts.appsparkle.org/v1/audio/speech\"")
     }
 
     signingConfigs {
@@ -66,6 +72,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // JP fork: TTS settings for the Struggle widget's AivisSpeech audio.
+        buildConfig = true
     }
 
     // No Google-encrypted dependency report in the APK signing block: F-Droid's

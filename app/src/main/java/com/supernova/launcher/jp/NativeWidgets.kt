@@ -26,6 +26,7 @@ import com.supernova.launcher.ui.WidgetPickerIcons
 object NativeWidgets {
 
     private const val PREFIX = "native:"
+    const val GROUP_KEY = "jp-native"
 
     class Spec(
         val kind: String,
@@ -39,7 +40,11 @@ object NativeWidgets {
     private val specs = listOf(
         Spec(ShortcutBarWidget.KIND, R.string.jp_widget_shortcuts, R.drawable.ic_jp_torii, 4, 1) { c, _ ->
             ShortcutBarWidget(c)
-        }
+        },
+        Spec(
+            com.supernova.launcher.jp.struggle.StruggleWidgetView.KIND,
+            R.string.jp_widget_struggle, R.drawable.ic_jp_torii, 4, 2
+        ) { c, _ -> com.supernova.launcher.jp.struggle.StruggleWidgetView(c) }
     )
 
     fun provider(kind: String): String = PREFIX + kind
@@ -71,6 +76,6 @@ object NativeWidgets {
                 target = ShortcutTarget.Native(spec.kind)
             )
         },
-        key = "jp-native"
+        key = GROUP_KEY
     )
 }

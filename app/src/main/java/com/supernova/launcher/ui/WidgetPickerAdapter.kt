@@ -126,7 +126,10 @@ class WidgetPickerAdapter(
                 if (entry.widgetCount > 0) {
                     add(res.getQuantityString(R.plurals.widget_count, entry.widgetCount, entry.widgetCount))
                 }
-                if (entry.shortcutCount > 0) {
+                // JP fork: the built-in group's rows are widgets, though listed as shortcuts.
+                if (entry.shortcutCount > 0 && entry.key == com.supernova.launcher.jp.NativeWidgets.GROUP_KEY) {
+                    add(res.getQuantityString(R.plurals.jp_widget_count, entry.shortcutCount, entry.shortcutCount))
+                } else if (entry.shortcutCount > 0) {
                     add(res.getQuantityString(R.plurals.shortcut_count, entry.shortcutCount, entry.shortcutCount))
                 }
             }

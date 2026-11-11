@@ -26,8 +26,16 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
 - [x] 0. Own app id + name; builds; 446 unit tests pass.
 - [x] 1. Built-in widget framework + **Japanese shortcuts** bar (Chiba WebAPK, ZeroClaw via
       Washi's OpenChatActivity → tg:// fallback, Anki, Akebi, Takoboto).
-- [ ] 2. **Struggle** widget ported from `~/Dev/anki-struggle-widget` (AnkiDroid provider,
-      swipeable carousel, real frost from the view's own position, grading, AivisSpeech).
+- [x] 2. **Struggle** widget ported from `~/Dev/anki-struggle-widget` into `jp/struggle/`
+      (CardRepo/Queue/Tts/ReviewActivity copied; new `StruggleWidgetView` + `Frost`). Reviews Shiba
+      Dash's top-level **"Struggling Cards"** filtered deck (renamed 2026-11-10; old "Struggling"
+      still accepted). Tap = reveal (+ AivisSpeech), grade pills show AnkiDroid's intervals,
+      swipe ← or ⤼ = skip (bury), ⤢ = full reviewer, reloads whenever home is shown. Frost is
+      cut from the wallpaper at the view's real screen position — no calibration.
+      Phone setup: `pm grant dev.fabiani.supernova.debug com.ichi2.anki.permission.READ_WRITE_DATABASE`,
+      `appops set dev.fabiani.supernova.debug MANAGE_EXTERNAL_STORAGE allow`; `tts.key` in local.properties.
+      ⚠️ MagicOS "Smart recovery" offers to UNINSTALL after several `adb install -r` in a row while the
+      app is foreground — press Cancel; it is the reinstall kills, not a crash (process stable after).
 - [ ] 3. **Dictionary in search**: offline JMdict (from `~/Downloads/JMdict_english.zip`) as a
       search provider; tap → Akebi/Takoboto.
 - [ ] 4. **Word of the day** card (home + feed), from Anki decks, furigana + audio.
