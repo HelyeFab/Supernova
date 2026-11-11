@@ -235,10 +235,13 @@ object CardRepo {
         // Other note types in the folder (RTK, kotoba, Talk in Tokyo): the first
         // non-empty field is the prompt, a meaning-like field the answer.
         if (card.word.isEmpty()) {
-            val first = values.map(::clean).firstOrNull { it.isNotEmpty() } ?: return null
+            // Lead with the first field that has Japanese in it (kotoba's first field is English).
+            val cleaned = values.map(::clean)
+            val first = cleaned.firstOrNull { f -> f.any { it in '\u3040'..'\u30ff' || it in '\u3400'..'\u9fff' } }
+                ?: cleaned.firstOrNull { it.isNotEmpty() } ?: return null
             val answer = listOf("Keyword", "Meaning", "English", "Translation", "Back", "SentenceTranslation")
                 .firstNotNullOfOrNull { k -> f[k]?.let(::clean)?.takeIf { it.isNotEmpty() && it != first } }
-                ?: values.map(::clean).drop(1).firstOrNull { it.isNotEmpty() && it != first }.orEmpty()
+                ?: cleaned.firstOrNull { it.isNotEmpty() && it != first }.orEmpty()
             card = card.copy(word = first, reading = "", meaning = answer, sentence = "")
         }
         card = card.copy(word = joinJp(card.word))

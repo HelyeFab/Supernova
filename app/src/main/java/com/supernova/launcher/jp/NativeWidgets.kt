@@ -40,6 +40,10 @@ object NativeWidgets {
     )
 
     private val specs = listOf(
+        // Word of the day + Struggle in one slot, rotated with a vertical swipe.
+        Spec(StackWidgetView.KIND, R.string.jp_widget_stack, R.drawable.ic_jp_torii, 4, 3) { c, item ->
+            StackWidgetView(c, item.id, listOf(WordOfDayView(c), com.supernova.launcher.jp.struggle.StruggleWidgetView(c)))
+        },
         Spec(ShortcutBarWidget.KIND, R.string.jp_widget_shortcuts, R.drawable.ic_jp_torii, 4, 1) { c, _ ->
             ShortcutBarWidget(c)
         },

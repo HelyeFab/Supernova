@@ -280,6 +280,16 @@ class WidgetController(
     // already scroll is known at the down, while a stack or flipper only
     // claims the stream once the drag passes its own slop.
     fun trackWidgetScroll(ev: MotionEvent): Boolean {
+        // JP fork: built-in widgets that swipe vertically (the study stack) own
+        // their whole gesture, as a scrolling widget does.
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> nativeTouch = nativeOwnerUnder(ev.rawX, ev.rawY)
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (nativeTouch) {
+                nativeTouch = false
+                return true
+            }
+        }
+        if (nativeTouch) return true
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 touchedWidget = widgetHostUnder(ev.rawX, ev.rawY)
@@ -304,6 +314,16 @@ class WidgetController(
             }
         }
         return scrollingWidget != null
+    }
+
+    private var nativeTouch = false
+    private val nativeOwners = java.util.Collections.newSetFromMap(java.util.WeakHashMap<View, Boolean>())
+
+    private fun nativeOwnerUnder(rawX: Float, rawY: Float): Boolean = nativeOwners.any { v ->
+        if (!v.isShown) return@any false
+        v.getLocationOnScreen(widgetHitLocation)
+        rawX >= widgetHitLocation[0] && rawX < widgetHitLocation[0] + v.width &&
+            rawY >= widgetHitLocation[1] && rawY < widgetHitLocation[1] + v.height
     }
 
     // Widget host views are laid out inside the pager pages, so a plain
@@ -576,6 +596,7 @@ class WidgetController(
     fun buildWidgetView(item: LauncherItem): View {
         if (com.supernova.launcher.jp.NativeWidgets.isNative(item.widgetProvider)) {
             return com.supernova.launcher.jp.NativeWidgets.create(activity, item).also { view ->
+                if (view is com.supernova.launcher.jp.StackWidgetView) nativeOwners += view
                 view.setOnLongClickListener { v ->
                     host.onWidgetLongPress(v, item)
                     true
