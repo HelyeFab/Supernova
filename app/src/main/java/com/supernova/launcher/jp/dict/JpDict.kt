@@ -46,11 +46,11 @@ object JpDict {
 
     /** The [day]'s common word with kanji, stable for the whole day. */
     @Synchronized
-    fun daily(context: Context, day: Long): Entry? {
+    fun daily(context: Context, day: Long, skip: Int = 0): Entry? {
         val database = open(context) ?: return null
         val count = database.rawQuery(DAILY_COUNT, null).use { if (it.moveToFirst()) it.getLong(0) else 0L }
         if (count == 0L) return null
-        val offset = Math.floorMod(day * 104729L, count)
+        val offset = Math.floorMod(day * 104729L + skip * 7919L, count)
         return database.rawQuery("$DAILY_PICK LIMIT 1 OFFSET $offset", null).use { c ->
             if (!c.moveToFirst()) null
             else Entry(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getString(4), c.getInt(5) == 1)

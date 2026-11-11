@@ -65,6 +65,14 @@ class WordOfDayView(context: Context) : LinearLayout(context) {
             label.ellipsize = TextUtils.TruncateAt.END
             addView(label, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
             tabs.forEach { (src, v) -> v.setOnClickListener { show(src) }; addView(v) }
+            // ↻: another word on Anki / 辞書 (until tapped again; tomorrow starts fresh),
+            // or fetch Chiba's latest sentence right now.
+            addView(ImageView(context).apply {
+                setImageResource(com.supernova.launcher.R.drawable.jp_ic_refresh)
+                setColorFilter(MUTED)
+                scaleType = ImageView.ScaleType.CENTER
+                setOnClickListener { refreshCurrent() }
+            }, LayoutParams(dp(32), dp(28)))
             addView(ImageView(context).apply {
                 setImageResource(com.supernova.launcher.R.drawable.jp_ic_expand)
                 setColorFilter(MUTED)
@@ -118,15 +126,32 @@ class WordOfDayView(context: Context) : LinearLayout(context) {
         load()
     }
 
-    private fun load() {
+    private fun refreshCurrent() {
+        val ctx = context.applicationContext
+        val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        when (source) {
+            Source.CHIBA -> prefs.edit().putLong("fetched", 0L).apply()
+            else -> {
+                val key = skipKey(source, LocalDate.now().toEpochDay())
+                prefs.edit().putInt(key, prefs.getInt(key, 0) + 1).apply()
+            }
+        }
+        body.animate().alpha(0.3f).setDuration(FADE_MS).start()
+        load { body.animate().alpha(1f).setDuration(FADE_MS).start() }
+    }
+
+    private fun load(then: () -> Unit = {}) {
         val ctx = context.applicationContext
         val day = LocalDate.now().toEpochDay()
+        val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val ankiSkip = prefs.getInt(skipKey(Source.ANKI, day), 0)
+        val dictSkip = prefs.getInt(skipKey(Source.DICT, day), 0)
         IO.execute {
-            val anki = runCatching { CardRepo.dailyCard(ctx, ANKI_SEARCH, day) }.getOrNull()?.let {
+            val anki = runCatching { CardRepo.dailyCard(ctx, ANKI_SEARCH, day, ankiSkip) }.getOrNull()?.let {
                 Shown("Anki · ${it.deck}", it.word, it.reading, it.meaning, it.sentence,
                     it.reading.ifEmpty { it.word }, lookup = it.word)
             }
-            val dict = JpDict.daily(ctx, day)?.let {
+            val dict = JpDict.daily(ctx, day, dictSkip)?.let {
                 Shown("辞書 · ${it.pos}", it.head, it.reading, it.gloss, "", it.reading.ifEmpty { it.head }, lookup = it.head)
             }
             val chiba = chibaPing(ctx)
@@ -135,6 +160,7 @@ class WordOfDayView(context: Context) : LinearLayout(context) {
                 shown[Source.DICT] = dict
                 shown[Source.CHIBA] = chiba
                 show(source)
+                then()
             }
         }
     }
@@ -218,6 +244,9 @@ class WordOfDayView(context: Context) : LinearLayout(context) {
             "OR deck:kotoba) -is:new -is:suspended prop:ivl<21"
 
         private val IO = Executors.newSingleThreadExecutor()
+
+        // Refresh taps count per source per day, so a new day starts at its own pick.
+        private fun skipKey(source: Source, day: Long) = "skip_${source.name}_$day"
 
         // The latest ping, fetched at most every 5 minutes; the last one stays on failure.
         private fun chibaPing(ctx: Context): Shown? {

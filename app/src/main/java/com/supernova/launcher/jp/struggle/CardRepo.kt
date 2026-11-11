@@ -155,11 +155,23 @@ object CardRepo {
     }
 
     /** JP fork: the [day]'s note among those matching [search], stable for the whole day. */
-    fun dailyCard(ctx: Context, search: String, day: Long): StruggleCard? {
+    // [skip]: how many times refresh was tapped today - each moves to another note.
+    fun dailyCard(ctx: Context, search: String, day: Long, skip: Int = 0): StruggleCard? {
         val ids = noteIds(ctx, search).sorted()
         if (ids.isEmpty()) return null
-        val nid = ids[Math.floorMod(day * 7919L, ids.size.toLong()).toInt()]
-        return cardFor(ctx, nid, 0)
+        val nid = ids[Math.floorMod(day * 7919L + skip * 104729L, ids.size.toLong()).toInt()]
+        val card = cardFor(ctx, nid, 0) ?: return null
+        return deckName(ctx, nid, 0)?.let { card.copy(deck = it) } ?: card
+    }
+
+    /** The deck the card sits in now, its last "::" part ("kotoba", "JLPT Tango"). */
+    private fun deckName(ctx: Context, nid: Long, ord: Int): String? {
+        val deckId = ctx.contentResolver.query(Uri.parse("content://$AUTHORITY/notes/$nid/cards/$ord"),
+            arrayOf("deck_id"), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else null } ?: return null
+        ctx.contentResolver.query(Uri.parse("content://$AUTHORITY/decks"), arrayOf("deck_id", "deck_name"), null, null, null)?.use { c ->
+            while (c.moveToNext()) if (c.getLong(0) == deckId) return c.getString(1).substringAfterLast("::")
+        }
+        return null
     }
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -254,6 +266,8 @@ object CardRepo {
         return raw
             .substringBefore("<!--")              // Core readings carry a pitch-accent SVG after a comment
             .replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), " ")
+            // Ruby furigana: keep the base text, drop the reading (<rt>) and fallback parens (<rp>).
+            .replace(Regex("<rt>.*?</rt>|<rp>.*?</rp>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)), "")
             .replace(Regex("<[^>]*>"), "")
             .replace(Regex("\\[sound:[^]]*]"), "")
             .replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
