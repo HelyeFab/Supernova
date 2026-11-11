@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JP fork strings. Kept in their own file so upstream merges of strings.xml stay clean. -->
+<resources>
+    <string name="jp_widgets_group">Built-in (日本語)</string>
+    <string name="jp_native_widget_row_subtitle">Built-in widget</string>
+    <string name="jp_widget_shortcuts">Japanese shortcuts</string>
+    <string name="jp_widget_unknown">Unknown built-in widget</string>
+</resources>

@@ -574,6 +574,14 @@ class WidgetController(
     }
 
     fun buildWidgetView(item: LauncherItem): View {
+        if (com.supernova.launcher.jp.NativeWidgets.isNative(item.widgetProvider)) {
+            return com.supernova.launcher.jp.NativeWidgets.create(activity, item).also { view ->
+                view.setOnLongClickListener { v ->
+                    host.onWidgetLongPress(v, item)
+                    true
+                }
+            }
+        }
         val widgetId = item.appWidgetId ?: return fallbackWidgetView(item)
         val hostView = widgetHostViews[widgetId]?.also(::applyWidgetCornerRadius)
             ?: run {
@@ -660,7 +668,10 @@ class WidgetController(
     // refused bind stays refused.
     fun rebindRestoredWidgets(model: LauncherModel) {
         model.items
-            .filter { it.itemType == ItemType.WIDGET && it.appWidgetId == null }
+            .filter {
+                it.itemType == ItemType.WIDGET && it.appWidgetId == null &&
+                    !com.supernova.launcher.jp.NativeWidgets.isNative(it.widgetProvider)
+            }
             .forEach { item ->
                 rebindSilently(item.id, item.widgetProvider, item.userSerial) { viewModel.setWidgetId(item.id, it) }
             }

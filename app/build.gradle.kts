@@ -25,7 +25,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.supernova.launcher"
+        applicationId = "dev.fabiani.supernova"
         minSdk = 28
         targetSdk = 36
         versionCode = 9

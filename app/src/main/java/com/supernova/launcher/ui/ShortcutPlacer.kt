@@ -71,7 +71,27 @@ class ShortcutPlacer(
                 cell
             )
             ShortcutTarget.Activities -> showActivitiesPicker(cell)
+            is ShortcutTarget.Native -> addNativeWidget(target.kind)
         }
+    }
+
+    // JP fork: a built-in widget, placed at the first free area of its span.
+    private fun addNativeWidget(kind: String) {
+        val spec = com.supernova.launcher.jp.NativeWidgets.spec(kind) ?: return
+        val prefs = viewModel().state.value.prefs
+        val spanX = spec.spanX.coerceAtMost(prefs.gridCols)
+        val spanY = spec.spanY.coerceAtMost(prefs.gridRows)
+        val page = viewModel().state.value.currentPage
+        val free = viewModel().firstFreeWorkspaceCell(page, spanX, spanY)
+        if (free == null) {
+            Toast.makeText(activity, R.string.no_room_on_page, Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModel().addWidget(
+            page, free.first, free.second, appWidgetId = null,
+            provider = com.supernova.launcher.jp.NativeWidgets.provider(kind),
+            label = activity.getString(spec.label), spanX = spanX, spanY = spanY
+        )
     }
 
     // The dropped cell, or for a tap the first free cell of the page in view;

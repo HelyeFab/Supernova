@@ -210,10 +210,13 @@ class WidgetPickerAdapter(
                     is ShortcutTarget.Action -> R.string.launcher_action_row_subtitle
                     ShortcutTarget.Activities -> R.string.activities_row_subtitle
                     is ShortcutTarget.Create -> R.string.shortcut_row_subtitle
+                    is ShortcutTarget.Native -> R.string.jp_native_widget_row_subtitle
                 }
             )
             binding.root.setOnClickListener { onPickShortcut(entry.target) }
             binding.root.setOnLongClickListener {
+                // Built-in widgets are placed by tap only: a drag previews a 1x1 cell.
+                if (entry.target is ShortcutTarget.Native) return@setOnLongClickListener false
                 onDragShortcut?.invoke(entry.target, binding.shortcutIcon) ?: false
             }
         }

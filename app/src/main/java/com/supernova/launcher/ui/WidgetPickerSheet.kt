@@ -91,7 +91,10 @@ object WidgetPickerSheet {
                 )
                 // The launcher's own actions are not search widgets either.
                 if (singleApp || filter != null) apps
-                else listOf(WidgetPickerGroups.launcherGroup(activity, icons)) + apps
+                else listOf(
+                    com.supernova.launcher.jp.NativeWidgets.pickerGroup(activity, icons),
+                    WidgetPickerGroups.launcherGroup(activity, icons)
+                ) + apps
             }
             if (groups.isEmpty()) {
                 binding.widgetPickerEmpty.visibility = View.VISIBLE

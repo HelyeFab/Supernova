@@ -8,7 +8,10 @@ internal object RestoredWidgets {
 
     // What the import's message counts: widgets and widget cards with no id.
     fun needingRebind(model: LauncherModel): Int =
-        model.items.count { it.itemType == ItemType.WIDGET && it.appWidgetId == null } +
+        model.items.count {
+            it.itemType == ItemType.WIDGET && it.appWidgetId == null &&
+                !com.supernova.launcher.jp.NativeWidgets.isNative(it.widgetProvider)
+        } +
             model.feedCards.count { it.widgetProvider != null && it.appWidgetId == null }
 
     fun withStaleCleared(

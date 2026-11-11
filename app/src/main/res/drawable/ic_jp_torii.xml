@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A torii gate: the JP fork's built-in widgets. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFE05A47"
+        android:pathData="M2,4.5C6,5.6 18,5.6 22,4.5L21.4,7C18,7.7 6,7.7 2.6,7Z" />
+    <path
+        android:fillColor="#FFE05A47"
+        android:pathData="M4.5,9.2h15v1.8h-15z" />
+    <path
+        android:fillColor="#FFE05A47"
+        android:pathData="M6.2,7.4h2v14.1h-2zM15.8,7.4h2v14.1h-2z" />
+    <path
+        android:fillColor="#FFE05A47"
+        android:pathData="M11,7.6h2v1.8h-2z" />
+</vector>

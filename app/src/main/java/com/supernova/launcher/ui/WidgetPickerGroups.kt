@@ -37,6 +37,9 @@ sealed interface ShortcutTarget {
 
     // Opens the any-activity picker.
     object Activities : ShortcutTarget
+
+    // JP fork: one of the launcher's own built-in widgets (jp/NativeWidgets).
+    data class Native(val kind: String) : ShortcutTarget
 }
 
 sealed interface WidgetPickerEntry {

@@ -446,7 +446,7 @@ class LauncherRepository(private val context: Context) {
         cellY: Int,
         cols: Int,
         rows: Int,
-        appWidgetId: Int,
+        appWidgetId: Int?,
         provider: String,
         label: String,
         spanX: Int,

@@ -239,7 +239,10 @@ class HomeEditController(
             val (cols, rows) = host.grid()
             val groups = withContext(Dispatchers.Default) {
                 val icons = WidgetPickerIcons.of(viewModel.appCatalog())
-                listOf(WidgetPickerGroups.launcherGroup(activity, icons)) +
+                listOf(
+                    com.supernova.launcher.jp.NativeWidgets.pickerGroup(activity, icons),
+                    WidgetPickerGroups.launcherGroup(activity, icons)
+                ) +
                     WidgetPickerGroups.build(activity, cellWidth, cellHeight, cols, rows, icons = icons)
             }
             if (isOpen) adapter.submit(groups, expandAll = false)

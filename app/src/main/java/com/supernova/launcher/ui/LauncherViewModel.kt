@@ -739,7 +739,7 @@ class LauncherViewModel(
         page: Int,
         cellX: Int,
         cellY: Int,
-        appWidgetId: Int,
+        appWidgetId: Int?,
         provider: String,
         label: String,
         spanX: Int,
