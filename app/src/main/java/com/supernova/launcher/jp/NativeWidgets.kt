@@ -47,6 +47,19 @@ object NativeWidgets {
         ) { c, _ -> com.supernova.launcher.jp.struggle.StruggleWidgetView(c) },
         Spec(WordOfDayView.KIND, R.string.jp_widget_word_of_day, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
             WordOfDayView(c)
+        },
+        // KWGT replacements (jp/home).
+        Spec(com.supernova.launcher.jp.home.SerifClockView.KIND, R.string.jp_widget_clock, R.drawable.ic_jp_torii, 4, 3) { c, _ ->
+            com.supernova.launcher.jp.home.SerifClockView(c)
+        },
+        Spec(com.supernova.launcher.jp.home.TodayPanelView.KIND, R.string.jp_widget_today, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            com.supernova.launcher.jp.home.TodayPanelView(c)
+        },
+        Spec(com.supernova.launcher.jp.home.MonthGridView.KIND, R.string.jp_widget_month, R.drawable.ic_jp_torii, 4, 3) { c, _ ->
+            com.supernova.launcher.jp.home.MonthGridView(c)
+        },
+        Spec(com.supernova.launcher.jp.home.WeatherForecastView.KIND, R.string.jp_widget_weather, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            com.supernova.launcher.jp.home.WeatherForecastView(c)
         }
     )
 

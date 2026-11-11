@@ -33,6 +33,13 @@ import kotlin.math.abs
 @SuppressLint("ViewConstructor")
 class StruggleWidgetView(context: Context) : FrameLayout(context) {
 
+    // Ink follows the frost: dark ink on the milky day glass, light ink on the night glass.
+    private val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES
+    private val TEXT = if (night) 0xFFE8EFEC.toInt() else 0xFF14211F.toInt()
+    private val MUTED = if (night) 0xFFAFC0BB.toInt() else 0xFF41524E.toInt()
+    private val ACCENT = if (night) 0xFF7FD6C2.toInt() else 0xFF16705F.toInt()
+
     private val glass = ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_XY }
     private val header = text(11f, MUTED)
     private val word = text(26f, TEXT).apply { gravity = Gravity.CENTER }
@@ -61,7 +68,8 @@ class StruggleWidgetView(context: Context) : FrameLayout(context) {
         }
         background = GradientDrawable().apply {
             cornerRadius = dp(RADIUS_DP).toFloat()
-            colors = intArrayOf(0xC8FFFFFF.toInt(), 0x99EEF5F3.toInt())
+            colors = if (night) intArrayOf(0xCC1E2826.toInt(), 0x99141A19.toInt())
+            else intArrayOf(0xC8FFFFFF.toInt(), 0x99EEF5F3.toInt())
             orientation = GradientDrawable.Orientation.TL_BR
             setStroke(dp(1), 0x80FFFFFF.toInt())
         }
@@ -325,9 +333,6 @@ class StruggleWidgetView(context: Context) : FrameLayout(context) {
         private const val RADIUS_DP = 22
         private const val SENTENCE_MIN_DP = 190
         private const val SWIPE_MS = 180L
-        private val TEXT = 0xFF14211F.toInt()
-        private val MUTED = 0xFF41524E.toInt()
-        private val ACCENT = 0xFF16705F.toInt()
         private val PILLS = intArrayOf(0xD9C8463D.toInt(), 0xD9D9822B.toInt(), 0xD92E8B57.toInt(), 0xD92F6FB5.toInt())
         private val IO = Executors.newSingleThreadExecutor()
     }

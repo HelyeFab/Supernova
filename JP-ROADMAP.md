@@ -51,5 +51,17 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
       `chiba.appsparkle.org/api/ping-current`, token `chiba.widget.token` in local.properties,
       refetched at most every 5 min when home is shown). Anki/辞書 picks are stable per day.
       Tap = AivisSpeech (pings at 0.8 speed); ↗ = Akebi for the word / Chiba for the ping.
-- [ ] 5. Replace KWGT: clock (SerifClock look), Today panel, month grid with 曜日/祝日/令和,
-      weather, moon phase. Then retire KWGT + the Washi Octopi auto-fix.
+- [x] 5. KWGT replacements (`jp/home/`), same palette (fg #DCDCD8, sub #BEBEBA, card #73303030,
+      accent #E05A47) and Abril Fatface (`res/font/jp_abril_fatface.ttf`, OFL):
+      **Serif clock** 4x3 (11月11日(水) date, HH.mm, battery ring, drawn moon phase, ZeroClaw paw,
+      weather pill; taps → Calendar / Honor Clock / battery / Honor Weather / ZeroClaw),
+      **Today panel** 4x2 (day, 令和 year, 曜日, weather, 次の祝日 countdown, time),
+      **Month calendar** 4x3 (月-first grid, 土 blue, 日+祝日 red, today ringed, holidays named),
+      **Weather forecast** 4x2 (now + 4 days, 雨 · Rain labels, drawn icons — `WeatherGlyph`, since
+      emoji ignore U+FE0E here). `JpCalendar` computes 祝日 incl. 振替休日/国民の休日 (tested vs the
+      2026 Cabinet Office list); `Moon` = mean synodic month. Weather = Open-Meteo for a FIXED place
+      (`Weather.PLACE` Medicina 44.48,11.64), cached 30 min. All redraw on TIME_TICK/battery and on
+      every home show — they cannot go stale.
+- [ ] 6. Switch the Honor's default home to Supernova JP, move the layout over (backup export/import
+      from F-Droid Supernova, or rebuild), then retire KWGT + the Washi Octopi auto-fix.
+- Ideas: deinflection in dictionary search; EN→JP lookup; weather place setting; frost on all cards.

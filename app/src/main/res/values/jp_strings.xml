@@ -8,5 +8,9 @@
     <string name="jp_widget_struggle">Struggling cards (Anki)</string>
     <string name="jp_dictionary_header">Dictionary</string>
     <string name="jp_widget_word_of_day">Word of the day</string>
+    <string name="jp_widget_clock">Serif clock (時計)</string>
+    <string name="jp_widget_today">Today panel (今日)</string>
+    <string name="jp_widget_month">Month calendar (祝日)</string>
+    <string name="jp_widget_weather">Weather forecast (天気)</string>
     <string name="jp_widget_unknown">Unknown built-in widget</string>
 </resources>
