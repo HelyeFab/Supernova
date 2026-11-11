@@ -65,3 +65,25 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
 - [ ] 6. Switch the Honor's default home to Supernova JP, move the layout over (backup export/import
       from F-Droid Supernova, or rebuild), then retire KWGT + the Washi Octopi auto-fix.
 - Ideas: deinflection in dictionary search; EN→JP lookup; weather place setting; frost on all cards.
+## Since phase 5 (2026-11-11, evening)
+- Supernova JP Debug is the Honor's DEFAULT HOME. Home page = clock page (edit mode → house button).
+  ⚠️ MagicOS Smart recovery resets the HOME role after repeated `adb install -r` of the home app:
+  after every install run `adb shell cmd role get-role-holders android.app.role.HOME` and restore with
+  `cmd role add-role-holder android.app.role.HOME dev.fabiani.supernova.debug 0`. Always press Cancel on
+  the "Smart recovery … uninstall" dialog. A signed release build installed once would end this.
+- Clock: digits drawn by ink (`InkTimeView`, 90% width), date/time/pills packed; date Japanese only.
+- **Japanese apps folder** picker entry (`jp/JapaneseApps.kt`, 22 apps, WebAPKs by URL); bar removed.
+- **Study stack** (`jp/StackWidgetView.kt`): word of the day + Struggle, vertical swipe rotates, dots;
+  `WidgetController.trackWidgetScroll` lets it own its gestures. Word card has ↻ (per-day skips),
+  real deck names, ruby-free text, Japanese-first for kotoba notes.
+- **Feed cards** (`jp/cards/`): News (NHK EASY from nhk.selfmind.dev with furigana `RubySpan` + ▶ NHK
+  audio, fallback NHK ONE RSS), 今日の名言 (50 sayings), 季節 (和風月名 + 二十四節気), 今日の復習
+  (AnkiDroid due per top-level deck). Feed cards can feature any built-in widget (Add card → Widget →
+  Built-in); name + height set automatically.
+- nhk-easy fetcher on leonard is now on an hourly cron (Emmanuel added it).
+
+## Next
+- Verify News card furigana rendering on the phone (not yet seen).
+- Signed release build (stop the home-role resets).
+- Optional: jump to the clock page on screen-on; dictionary deinflection; EN→JP lookup.
+
