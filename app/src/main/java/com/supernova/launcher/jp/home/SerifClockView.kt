@@ -25,17 +25,33 @@ import java.util.Locale
 class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true) {
 
     private val date = label(15f, FG).apply { shadow(this); gravity = Gravity.CENTER }
-    private val time = TextView(context).apply {
+    // Sized from the digits' real ink (Abril overhangs its advance widths, so
+    // autosize clipped the last digit): the time's ink spans INK_WIDTH of the
+    // widget's width, capped by the height it has.
+    private val time = object : TextView(context) {
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            super.onSizeChanged(w, h, oldw, oldh)
+            fitTime(this, w, h)
+        }
+    }.apply {
         typeface = serif()
         setTextColor(0xFFFFFFFF.toInt())
         includeFontPadding = false
         gravity = Gravity.CENTER
         maxLines = 1
         shadow(this)
-        setAutoSizeTextTypeUniformWithConfiguration(24, 220, 2, TypedValue.COMPLEX_UNIT_SP)
-        // Abril Fatface overhangs its advance width; keep the last digit inside.
-        setPadding(dp(8), 0, dp(14), 0)
     }
+
+    private fun fitTime(view: TextView, w: Int, h: Int) {
+        if (w <= 0 || h <= 0) return
+        val probe = android.graphics.Paint(view.paint).apply { textSize = PROBE_PX }
+        val ink = android.graphics.Rect()
+        probe.getTextBounds(WIDEST, 0, WIDEST.length, ink)
+        val byWidth = PROBE_PX * w * INK_WIDTH / ink.width()
+        val byHeight = PROBE_PX * h * INK_HEIGHT / ink.height()
+        view.setTextSize(TypedValue.COMPLEX_UNIT_PX, minOf(byWidth, byHeight))
+    }
+
     private val battery = BatteryRingView(context)
     private val moon = MoonView(context)
     private val weatherIcon = icon(26)
@@ -121,6 +137,11 @@ class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true
     companion object {
         const val KIND = "serif-clock"
         private const val BADGE_DP = 44
+        private const val PROBE_PX = 200f
+        private const val WIDEST = "00.00"
+        // "Slightly smaller" than edge to edge (asked 2026-11-11).
+        private const val INK_WIDTH = 0.90f
+        private const val INK_HEIGHT = 1.0f
         private const val TELEGRAM = "org.telegram.messenger"
     }
 }

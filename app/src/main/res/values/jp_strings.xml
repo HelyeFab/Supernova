@@ -12,5 +12,6 @@
     <string name="jp_widget_today">Today panel (今日)</string>
     <string name="jp_widget_month">Month calendar (祝日)</string>
     <string name="jp_widget_weather">Weather forecast (天気)</string>
+    <string name="jp_japanese_folder">Japanese apps folder (🍙)</string>
     <string name="jp_widget_unknown">Unknown built-in widget</string>
 </resources>

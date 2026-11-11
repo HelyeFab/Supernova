@@ -75,8 +75,17 @@ class ShortcutPlacer(
         }
     }
 
+    // JP fork: a folder of the installed Japanese study apps, at the first free cell.
+    private fun addJapaneseFolder() {
+        val apps = com.supernova.launcher.jp.JapaneseApps.installed(activity)
+        if (apps.isEmpty()) return
+        val at = landing(null) ?: return
+        viewModel().addFolderToWorkspace(com.supernova.launcher.jp.JapaneseApps.FOLDER_LABEL, apps, at.page, at.cellX, at.cellY)
+    }
+
     // JP fork: a built-in widget, placed at the first free area of its span.
     private fun addNativeWidget(kind: String) {
+        if (kind == com.supernova.launcher.jp.NativeWidgets.JAPANESE_FOLDER) return addJapaneseFolder()
         val spec = com.supernova.launcher.jp.NativeWidgets.spec(kind) ?: return
         val prefs = viewModel().state.value.prefs
         val spanX = spec.spanX.coerceAtMost(prefs.gridCols)

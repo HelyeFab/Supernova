@@ -27,6 +27,8 @@ object NativeWidgets {
 
     private const val PREFIX = "native:"
     const val GROUP_KEY = "jp-native"
+    // Not a widget: places a folder of the installed Japanese study apps (JapaneseApps).
+    const val JAPANESE_FOLDER = "japanese-folder"
 
     class Spec(
         val kind: String,
@@ -84,7 +86,14 @@ object NativeWidgets {
         label = context.getString(R.string.jp_widgets_group),
         icon = context.getDrawable(R.drawable.ic_jp_torii)?.let(icons.render),
         widgets = emptyList(),
-        shortcuts = specs.map { spec ->
+        shortcuts = listOf(
+            WidgetPickerEntry.Shortcut(
+                packageName = context.packageName,
+                label = context.getString(R.string.jp_japanese_folder),
+                icon = context.getDrawable(R.drawable.ic_jp_torii)?.let(icons.render),
+                target = ShortcutTarget.Native(JAPANESE_FOLDER)
+            )
+        ) + specs.map { spec ->
             WidgetPickerEntry.Shortcut(
                 packageName = context.packageName,
                 label = context.getString(spec.label),
