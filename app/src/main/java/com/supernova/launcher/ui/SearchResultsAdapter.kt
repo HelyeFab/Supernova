@@ -54,7 +54,9 @@ class SearchResultsAdapter(
         // lift the picture from and to anchor the menu on.
         val onAppLongPress: (View, LaunchableApp) -> Unit = { _, _ -> },
         val onShortcutLongPress: (View, SearchResult.Shortcut) -> Unit = { _, _ -> },
-        val onFolderLongPress: (View, SearchResult.Folder) -> Unit = { _, _ -> }
+        val onFolderLongPress: (View, SearchResult.Folder) -> Unit = { _, _ -> },
+        // JP fork: a dictionary row opened its word in Akebi.
+        val onDictionaryOpened: () -> Unit = {}
     )
 
     // The best match, shown as a card with the app's own shortcuts.
@@ -145,6 +147,7 @@ class SearchResultsAdapter(
             is SearchResult.App -> "app/${result.app.userSerial}/${result.app.packageName}/${result.app.className}"
             is SearchResult.Web -> "web"
             is SearchResult.ProviderChips -> "chips"
+            is SearchResult.Dictionary -> "dict/${result.entry.id}"
         }
     }
 
@@ -179,6 +182,12 @@ class SearchResultsAdapter(
             .filter { topHit == null || it.packageName != topHit.app.packageName }
             .mapTo(rows) { Row.Result(it) }
         results.filterIsInstance<SearchResult.Contact>().mapTo(rows) { Row.Result(it) }
+        // JP fork: dictionary hits under their own header.
+        val dict = results.filterIsInstance<SearchResult.Dictionary>()
+        if (dict.isNotEmpty()) {
+            rows.add(Row.Header(R.string.jp_dictionary_header))
+            dict.mapTo(rows) { Row.Result(it) }
+        }
         // Every query ends with the providers; the web engine leads them.
         // With every provider off it's the web engine alone, as a plain row.
         if (SearchMarks.hasProviders(prefs)) {
@@ -226,6 +235,7 @@ class SearchResultsAdapter(
         is Row.Result -> when (row.result) {
             is SearchResult.Calculation -> TYPE_CALC
             is SearchResult.Card -> TYPE_CARD
+            is SearchResult.Dictionary -> TYPE_DICT
             else -> TYPE_ROW
         }
     }
@@ -256,6 +266,7 @@ class SearchResultsAdapter(
             }) as FlowLayout)
             TYPE_PROVIDER_ICONS -> ProviderIconsHolder(fullWidth(FrequentAppsRowView(parent.context)) as FrequentAppsRowView)
             TYPE_FREQUENT -> FrequentHolder(fullWidth(FrequentAppsRowView(parent.context)) as FrequentAppsRowView)
+            TYPE_DICT -> DictHolder(fullWidth(com.supernova.launcher.jp.dict.JpDictRowView(parent.context)) as com.supernova.launcher.jp.dict.JpDictRowView)
             else -> RowHolder(ItemSearchRowBinding.inflate(inflater, parent, false))
         }
     }
@@ -276,6 +287,7 @@ class SearchResultsAdapter(
                 is SearchResult.Folder -> (holder as RowHolder).bindFolder(result)
                 is SearchResult.Card -> (holder as CardHolder).bind(result)
                 is SearchResult.Web -> (holder as RowHolder).bindWeb(result)
+                is SearchResult.Dictionary -> (holder as DictHolder).bind(result)
                 is SearchResult.App, is SearchResult.ProviderChips -> Unit
             }
         }
@@ -604,6 +616,13 @@ class SearchResultsAdapter(
         }
     }
 
+    // JP fork: a JMdict hit; tapping opens the word and closes search.
+    inner class DictHolder(private val view: com.supernova.launcher.jp.dict.JpDictRowView) :
+        RecyclerView.ViewHolder(view) {
+        fun bind(result: SearchResult.Dictionary) =
+            view.bind(result.entry, textColor, accentColor) { callbacks.onDictionaryOpened() }
+    }
+
     private companion object {
         const val ACTION_TAG = "contact-action"
         const val TYPE_ROW = 0
@@ -616,5 +635,6 @@ class SearchResultsAdapter(
         const val TYPE_GRID = 8
         const val TYPE_SHORTCUTS = 9
         const val TYPE_DIVIDER = 10
+        const val TYPE_DICT = 41
     }
 }

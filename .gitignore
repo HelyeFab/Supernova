@@ -19,3 +19,4 @@ keystore.properties
 # Everything kept out of the public repo: signing keys, release notes,
 # release APKs, marketing images.
 /local/
+app/src/main/assets/jp/jmdict.db

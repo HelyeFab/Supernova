@@ -48,6 +48,9 @@ sealed class SearchResult {
     data class Card(val card: com.supernova.launcher.feed.FeedCard) : SearchResult()
 
     data class Web(val query: String, val provider: WebProvider) : SearchResult()
+
+    // JP fork: an offline JMdict hit (jp/dict).
+    data class Dictionary(val entry: com.supernova.launcher.jp.dict.JpDict.Entry) : SearchResult()
     data class ProviderChips(val query: String) : SearchResult()
 
     companion object {

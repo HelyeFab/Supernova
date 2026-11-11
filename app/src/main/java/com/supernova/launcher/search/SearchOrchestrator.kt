@@ -86,6 +86,8 @@ class SearchOrchestrator(
         is SearchResult.Folder -> 3
         is SearchResult.Shortcut -> 4
         is SearchResult.Contact -> 5
+        // JP fork: after the apps, ahead of the web providers.
+        is SearchResult.Dictionary -> 5
         is SearchResult.Web -> 6
         is SearchResult.ProviderChips -> 7
     }

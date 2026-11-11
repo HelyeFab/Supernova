@@ -330,7 +330,9 @@ class SearchController(
             ),
             ContactSearchProvider(context.applicationContext) {
                 viewModel.state.value.prefs.searchContactCards
-            }
+            },
+            // JP fork: offline JMdict.
+            com.supernova.launcher.jp.dict.JpDictSearchProvider(context.applicationContext)
         )
         return SearchOrchestrator(
             immediateProviders = immediate,
@@ -483,6 +485,7 @@ class SearchController(
     }
 
     private fun adapterCallbacks(surface: Surface) = SearchResultsAdapter.Callbacks(
+        onDictionaryOpened = { surface.dismiss() },
         onApp = { view, app ->
             onLaunchApp(view, app)
             surface.afterLaunch()

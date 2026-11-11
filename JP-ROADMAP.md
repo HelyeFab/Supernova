@@ -36,8 +36,14 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
       `appops set dev.fabiani.supernova.debug MANAGE_EXTERNAL_STORAGE allow`; `tts.key` in local.properties.
       ⚠️ MagicOS "Smart recovery" offers to UNINSTALL after several `adb install -r` in a row while the
       app is foreground — press Cancel; it is the reinstall kills, not a crash (process stable after).
-- [ ] 3. **Dictionary in search**: offline JMdict (from `~/Downloads/JMdict_english.zip`) as a
-      search provider; tap → Akebi/Takoboto.
+- [x] 3. **Dictionary in search** (`jp/dict/`): offline JMdict, 218,989 entries. Kana, kanji or
+      fully-convertible romaji (`taberu`, `kyou`, `konnichiha`; `Romaji.kt`, tested) → up to 4 rows
+      under a "Dictionary" header after the apps (★ = common). Tap → Akebi (PROCESS_TEXT), else
+      Takoboto, else jisho.org. App queries like "chrome"/"maps" never convert, so they're unaffected.
+      **The database is git-ignored and must be built before assembling**:
+      `python3 -I tools/jp/build_jmdict.py ~/Downloads/JMdict_english.zip app/src/main/assets/jp/jmdict.db`
+      (source: yomidevs/jmdict-yomitan). 43 MB on device (copied once per app update), +20 MB APK.
+      Not yet: deinflection (食べた → 食べる), English → Japanese lookup.
 - [ ] 4. **Word of the day** card (home + feed), from Anki decks, furigana + audio.
 - [ ] 5. Replace KWGT: clock (SerifClock look), Today panel, month grid with 曜日/祝日/令和,
       weather, moon phase. Then retire KWGT + the Washi Octopi auto-fix.

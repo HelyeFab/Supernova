@@ -6,5 +6,6 @@
     <plurals name="jp_widget_count"><item quantity="one">%d widget</item><item quantity="other">%d widgets</item></plurals>
     <string name="jp_widget_shortcuts">Japanese shortcuts</string>
     <string name="jp_widget_struggle">Struggling cards (Anki)</string>
+    <string name="jp_dictionary_header">Dictionary</string>
     <string name="jp_widget_unknown">Unknown built-in widget</string>
 </resources>
