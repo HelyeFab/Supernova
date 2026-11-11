@@ -25,32 +25,10 @@ import java.util.Locale
 class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true) {
 
     private val date = label(15f, FG).apply { shadow(this); gravity = Gravity.CENTER }
-    // Sized from the digits' real ink (Abril overhangs its advance widths, so
-    // autosize clipped the last digit): the time's ink spans INK_WIDTH of the
-    // widget's width, capped by the height it has.
-    private val time = object : TextView(context) {
-        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            super.onSizeChanged(w, h, oldw, oldh)
-            fitTime(this, w, h)
-        }
-    }.apply {
-        typeface = serif()
-        setTextColor(0xFFFFFFFF.toInt())
-        includeFontPadding = false
-        gravity = Gravity.CENTER
-        maxLines = 1
-        shadow(this)
-    }
-
-    private fun fitTime(view: TextView, w: Int, h: Int) {
-        if (w <= 0 || h <= 0) return
-        val probe = android.graphics.Paint(view.paint).apply { textSize = PROBE_PX }
-        val ink = android.graphics.Rect()
-        probe.getTextBounds(WIDEST, 0, WIDEST.length, ink)
-        val byWidth = PROBE_PX * w * INK_WIDTH / ink.width()
-        val byHeight = PROBE_PX * h * INK_HEIGHT / ink.height()
-        view.setTextSize(TypedValue.COMPLEX_UNIT_PX, minOf(byWidth, byHeight))
-    }
+    // The time drawn by its ink, not in a text line box: Abril Fatface's line
+    // box adds tall empty bands above and below the digits, which pushed the
+    // date and the pills far from them.
+    private val time = InkTimeView(context, serif()).apply { shadow = SHADOW }
 
     private val battery = BatteryRingView(context)
     private val moon = MoonView(context)
@@ -63,8 +41,11 @@ class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
         }
+        // Date, time and pills packed together, centred as one block.
         column.addView(date, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        column.addView(time, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
+        column.addView(time, LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(GAP_DP); bottomMargin = dp(GAP_DP + 4)
+        })
         val badges = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -137,11 +118,55 @@ class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true
     companion object {
         const val KIND = "serif-clock"
         private const val BADGE_DP = 44
-        private const val PROBE_PX = 200f
-        private const val WIDEST = "00.00"
-        // "Slightly smaller" than edge to edge (asked 2026-11-11).
-        private const val INK_WIDTH = 0.90f
-        private const val INK_HEIGHT = 1.0f
+        private const val GAP_DP = 10
         private const val TELEGRAM = "org.telegram.messenger"
+    }
+}
+
+// JP fork: the clock's digits, sized so "00.00" would span INK_WIDTH of the
+// width, and measured to the digits' ink height so nothing pads them. Uses
+// the widest string for the size, so the time doesn't grow and shrink as the
+// minutes change.
+@SuppressLint("ViewConstructor")
+class InkTimeView(context: Context, typeface: android.graphics.Typeface) : android.view.View(context) {
+
+    var text: CharSequence = ""
+        set(v) { if (field != v) { field = v; invalidate() } }
+    var shadow: Int = 0
+
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        this.typeface = typeface
+        color = 0xFFFFFFFF.toInt()
+        textAlign = android.graphics.Paint.Align.CENTER
+    }
+    private val ink = android.graphics.Rect()
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        paint.textSize = PROBE_PX
+        paint.getTextBounds(WIDEST, 0, WIDEST.length, ink)
+        var size = PROBE_PX * w * INK_WIDTH / ink.width()
+        // In a short widget, the height it is offered caps it.
+        if (MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.UNSPECIFIED) {
+            val maxH = MeasureSpec.getSize(heightMeasureSpec)
+            if (maxH > 0) size = minOf(size, PROBE_PX * maxH / ink.height())
+        }
+        paint.textSize = size
+        paint.getTextBounds(WIDEST, 0, WIDEST.length, ink)
+        val r = resources.displayMetrics.density * 3
+        paint.setShadowLayer(r, 0f, r / 3, shadow)
+        setMeasuredDimension(w, ink.height())
+    }
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        // Baseline placed so the digits' ink top sits at y = 0.
+        canvas.drawText(text.toString(), width / 2f, -ink.top.toFloat(), paint)
+    }
+
+    private companion object {
+        const val PROBE_PX = 200f
+        const val WIDEST = "00.00"
+        // "Slightly smaller" than edge to edge (asked 2026-11-11).
+        const val INK_WIDTH = 0.90f
     }
 }
