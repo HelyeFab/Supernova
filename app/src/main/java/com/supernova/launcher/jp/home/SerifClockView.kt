@@ -15,7 +15,6 @@ import android.widget.TextView
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 // JP fork: SerifClock, rebuilt. The date in Japanese, the time in Abril
 // Fatface, then a row of badges: battery ring, tonight's moon, the ZeroClaw
@@ -98,8 +97,7 @@ class SerifClockView(context: Context) : HomeWidget(context, wantsWeather = true
 
     override fun refresh() {
         val today = LocalDate.now()
-        date.text = "${today.monthValue}月${today.dayOfMonth}日(${JpCalendar.weekday(today)})  " +
-            today.format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH))
+        date.text = "${today.monthValue}月${today.dayOfMonth}日(${JpCalendar.weekday(today)})"
         time.text = LocalTime.now().format(DateTimeFormatter.ofPattern("HH.mm"))
         battery.percent = batteryPct
         battery.charging = charging
