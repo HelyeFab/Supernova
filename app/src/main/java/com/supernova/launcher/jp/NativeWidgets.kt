@@ -54,6 +54,19 @@ object NativeWidgets {
         Spec(WordOfDayView.KIND, R.string.jp_widget_word_of_day, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
             WordOfDayView(c)
         },
+        // Feed-style cards (jp/cards); they work on the home screen too.
+        Spec(com.supernova.launcher.jp.cards.NewsView.KIND, R.string.jp_widget_news, R.drawable.ic_jp_torii, 4, 3) { c, _ ->
+            com.supernova.launcher.jp.cards.NewsView(c)
+        },
+        Spec(com.supernova.launcher.jp.cards.ProverbView.KIND, R.string.jp_widget_proverb, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            com.supernova.launcher.jp.cards.ProverbView(c)
+        },
+        Spec(com.supernova.launcher.jp.cards.SeasonView.KIND, R.string.jp_widget_season, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            com.supernova.launcher.jp.cards.SeasonView(c)
+        },
+        Spec(com.supernova.launcher.jp.cards.ReviewsView.KIND, R.string.jp_widget_reviews, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            com.supernova.launcher.jp.cards.ReviewsView(c)
+        },
         // KWGT replacements (jp/home).
         Spec(com.supernova.launcher.jp.home.SerifClockView.KIND, R.string.jp_widget_clock, R.drawable.ic_jp_torii, 4, 3) { c, _ ->
             com.supernova.launcher.jp.home.SerifClockView(c)
@@ -71,9 +84,29 @@ object NativeWidgets {
 
     fun provider(kind: String): String = PREFIX + kind
 
+    // On a feed card: a height that fits the card, and its short name.
+    fun feedHeightDp(provider: String): Int = when (provider.removePrefix(PREFIX)) {
+        com.supernova.launcher.jp.cards.NewsView.KIND -> 330
+        StackWidgetView.KIND, com.supernova.launcher.jp.home.MonthGridView.KIND,
+        com.supernova.launcher.jp.home.SerifClockView.KIND -> 260
+        else -> 200
+    }
+
+    fun feedName(context: Context, provider: String): String =
+        spec(provider.removePrefix(PREFIX))?.let { context.getString(it.label) }.orEmpty()
+
     fun isNative(provider: String?): Boolean = provider?.startsWith(PREFIX) == true
 
     fun spec(kind: String): Spec? = specs.firstOrNull { it.kind == kind }
+
+    // A feed card featuring a built-in widget: one view per card, kept so its
+    // state (stack position, revealed card) survives feed rebinds.
+    private val cardViews = HashMap<String, View>()
+
+    fun cardView(context: Context, cardId: String, provider: String): View =
+        cardViews.getOrPut("$cardId|$provider") {
+            create(context, LauncherItem(id = cardId, itemType = com.supernova.launcher.data.ItemType.WIDGET, widgetProvider = provider))
+        }
 
     fun create(context: Context, item: LauncherItem): View {
         val kind = item.widgetProvider.orEmpty().removePrefix(PREFIX)

@@ -832,6 +832,10 @@ class LauncherViewModel(
 
     fun setCardWidget(cardId: String, appWidgetId: Int, provider: String) = persist { repository.setCardWidget(cardId, appWidgetId, provider) }
 
+    // JP fork: a built-in widget (provider "native:<kind>") featured on a feed card.
+    fun setCardNativeWidget(cardId: String, provider: String, name: String, heightDp: Int) =
+        persist { repository.setCardNativeWidget(cardId, provider, name, heightDp) }
+
     // Undo-remove: puts the captured item (plus folder members) back.
     fun restoreItems(items: List<LauncherItem>) {
         val prefs = state.value.prefs

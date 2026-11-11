@@ -697,7 +697,10 @@ class WidgetController(
                 rebindSilently(item.id, item.widgetProvider, item.userSerial) { viewModel.setWidgetId(item.id, it) }
             }
         model.feedCards
-            .filter { FeaturedType.fromName(it.featuredType) == FeaturedType.WIDGET && it.appWidgetId == null }
+            .filter {
+                FeaturedType.fromName(it.featuredType) == FeaturedType.WIDGET && it.appWidgetId == null &&
+                    !com.supernova.launcher.jp.NativeWidgets.isNative(it.widgetProvider)
+            }
             .forEach { card ->
                 val provider = card.widgetProvider.orEmpty()
                 rebindSilently(card.id, provider) { viewModel.setCardWidget(card.id, it, provider) }
@@ -791,6 +794,17 @@ class WidgetController(
         WidgetPickerSheet.show(
             activity, cellWidth, cellHeight, prefs.gridCols, prefs.gridRows,
             prefs = prefs, onPicked = { info -> onWidgetPickedForCard(info, cardId) },
+            // JP fork: a built-in widget picked for the card.
+            onPickShortcut = { target ->
+                if (target is ShortcutTarget.Native && target.kind != com.supernova.launcher.jp.NativeWidgets.JAPANESE_FOLDER) {
+                    val provider = com.supernova.launcher.jp.NativeWidgets.provider(target.kind)
+                    viewModel.setCardNativeWidget(
+                        cardId, provider,
+                        com.supernova.launcher.jp.NativeWidgets.feedName(activity, provider),
+                        com.supernova.launcher.jp.NativeWidgets.feedHeightDp(provider)
+                    )
+                }
+            },
             icons = WidgetPickerIcons.of(viewModel.appCatalog())
         )
     }

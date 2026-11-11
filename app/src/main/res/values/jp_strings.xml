@@ -14,5 +14,9 @@
     <string name="jp_widget_weather">Weather forecast (天気)</string>
     <string name="jp_japanese_folder">Japanese apps folder (🍙)</string>
     <string name="jp_widget_stack">Study stack (word + struggle)</string>
+    <string name="jp_widget_news">News (ニュース · NHK)</string>
+    <string name="jp_widget_proverb">Saying of the day (名言)</string>
+    <string name="jp_widget_season">Season (季節 · 二十四節気)</string>
+    <string name="jp_widget_reviews">Anki due today (復習)</string>
     <string name="jp_widget_unknown">Unknown built-in widget</string>
 </resources>

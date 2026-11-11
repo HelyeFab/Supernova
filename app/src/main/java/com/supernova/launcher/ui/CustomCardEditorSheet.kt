@@ -183,7 +183,9 @@ object CustomCardEditorSheet {
                 val info = existing?.appWidgetId?.let {
                     android.appwidget.AppWidgetManager.getInstance(activity).getAppWidgetInfo(it)
                 }
-                binding.cardFeaturedLabel.text = info?.loadLabel(activity.packageManager)
+                val native = existing?.widgetProvider?.takeIf { com.supernova.launcher.jp.NativeWidgets.isNative(it) }
+                binding.cardFeaturedLabel.text = native?.let { com.supernova.launcher.jp.NativeWidgets.feedName(activity, it) }
+                    ?: info?.loadLabel(activity.packageManager)
                     ?: activity.getString(R.string.card_widget_unavailable)
                 binding.cardFeaturedIcon.setImageDrawable(info?.loadIcon(activity, 0))
             } else {

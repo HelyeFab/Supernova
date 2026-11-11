@@ -12,7 +12,10 @@ internal object RestoredWidgets {
             it.itemType == ItemType.WIDGET && it.appWidgetId == null &&
                 !com.supernova.launcher.jp.NativeWidgets.isNative(it.widgetProvider)
         } +
-            model.feedCards.count { it.widgetProvider != null && it.appWidgetId == null }
+            model.feedCards.count {
+                it.widgetProvider != null && it.appWidgetId == null &&
+                    !com.supernova.launcher.jp.NativeWidgets.isNative(it.widgetProvider)
+            }
 
     fun withStaleCleared(
         model: LauncherModel,

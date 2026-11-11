@@ -769,6 +769,27 @@ class LauncherRepository(private val context: Context) {
         }
     }
 
+    // JP fork: a built-in widget on a feed card - no host id to bind.
+    // An unnamed card takes the widget's name; the height is the widget's own.
+    suspend fun setCardNativeWidget(cardId: String, provider: String, name: String, heightDp: Int) {
+        mutate { current ->
+            current.copy(feedCards = current.feedCards.map { card ->
+                if (card.id == cardId) {
+                    card.copy(
+                        featuredType = com.supernova.launcher.feed.FeaturedType.WIDGET.name,
+                        featuredTarget = provider,
+                        appWidgetId = null,
+                        widgetProvider = provider,
+                        name = card.name.ifBlank { name },
+                        widgetHeightDp = heightDp
+                    )
+                } else {
+                    card
+                }
+            })
+        }
+    }
+
     suspend fun setCardWidget(cardId: String, appWidgetId: Int, provider: String) {
         mutate { current ->
             current.copy(feedCards = current.feedCards.map { card ->

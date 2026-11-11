@@ -146,7 +146,12 @@ class CardViewBinder(private val callbacks: Callbacks) {
                 }
             }
             FeaturedType.WIDGET -> {
-                val hosted = card.appWidgetId?.let(callbacks.widgetView)
+                // JP fork: a built-in widget featured on the card.
+                val hosted = if (com.supernova.launcher.jp.NativeWidgets.isNative(card.widgetProvider)) {
+                    com.supernova.launcher.jp.NativeWidgets.cardView(context, card.id, card.widgetProvider!!)
+                } else {
+                    card.appWidgetId?.let(callbacks.widgetView)
+                }
                 if (hosted == null) {
                     // The stand-in where the widget can't be hosted: the
                     // settings rendering, or an id left unbound by a restore.
