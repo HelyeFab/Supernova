@@ -44,7 +44,10 @@ object NativeWidgets {
         Spec(
             com.supernova.launcher.jp.struggle.StruggleWidgetView.KIND,
             R.string.jp_widget_struggle, R.drawable.ic_jp_torii, 4, 2
-        ) { c, _ -> com.supernova.launcher.jp.struggle.StruggleWidgetView(c) }
+        ) { c, _ -> com.supernova.launcher.jp.struggle.StruggleWidgetView(c) },
+        Spec(WordOfDayView.KIND, R.string.jp_widget_word_of_day, R.drawable.ic_jp_torii, 4, 2) { c, _ ->
+            WordOfDayView(c)
+        }
     )
 
     fun provider(kind: String): String = PREFIX + kind

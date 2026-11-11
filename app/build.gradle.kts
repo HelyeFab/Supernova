@@ -39,6 +39,9 @@ android {
         }
         buildConfigField("String", "TTS_KEY", "\"${jpLocal.getProperty("tts.key", "")}\"")
         buildConfigField("String", "TTS_URL", "\"https://tts.appsparkle.org/v1/audio/speech\"")
+        // JP fork: Chiba's latest Telegram ping, for the word-of-the-day card.
+        buildConfigField("String", "CHIBA_WIDGET_TOKEN", "\"${jpLocal.getProperty("chiba.widget.token", "")}\"")
+        buildConfigField("String", "CHIBA_PING_URL", "\"https://chiba.appsparkle.org/api/ping-current\"")
     }
 
     signingConfigs {

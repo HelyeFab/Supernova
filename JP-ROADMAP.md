@@ -44,6 +44,12 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
       `python3 -I tools/jp/build_jmdict.py ~/Downloads/JMdict_english.zip app/src/main/assets/jp/jmdict.db`
       (source: yomidevs/jmdict-yomitan). 43 MB on device (copied once per app update), +20 MB APK.
       Not yet: deinflection (食べた → 食べる), English → Japanese lookup.
-- [ ] 4. **Word of the day** card (home + feed), from Anki decks, furigana + audio.
+- [x] 4. **Word of the day** (`jp/WordOfDayView.kt`, 4x2): three sources, switched by swiping
+      inside the card or tapping its tabs — **Anki** (Core 2k/6k, JLPT Tango, kotoba;
+      `-is:new -is:suspended prop:ivl<21`, i.e. learning but not mature), **辞書** (a common JMdict
+      noun/verb/adjective with kanji), **Chiba** (latest Telegram ping from
+      `chiba.appsparkle.org/api/ping-current`, token `chiba.widget.token` in local.properties,
+      refetched at most every 5 min when home is shown). Anki/辞書 picks are stable per day.
+      Tap = AivisSpeech (pings at 0.8 speed); ↗ = Akebi for the word / Chiba for the ping.
 - [ ] 5. Replace KWGT: clock (SerifClock look), Today panel, month grid with 曜日/祝日/令和,
       weather, moon phase. Then retire KWGT + the Washi Octopi auto-fix.

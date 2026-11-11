@@ -44,6 +44,23 @@ object JpDict {
         return exact + prefix
     }
 
+    /** The [day]'s common word with kanji, stable for the whole day. */
+    @Synchronized
+    fun daily(context: Context, day: Long): Entry? {
+        val database = open(context) ?: return null
+        val count = database.rawQuery(DAILY_COUNT, null).use { if (it.moveToFirst()) it.getLong(0) else 0L }
+        if (count == 0L) return null
+        val offset = Math.floorMod(day * 104729L, count)
+        return database.rawQuery("$DAILY_PICK LIMIT 1 OFFSET $offset", null).use { c ->
+            if (!c.moveToFirst()) null
+            else Entry(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getString(4), c.getInt(5) == 1)
+        }
+    }
+
+    private const val DAILY_WHERE = "common = 1 AND reading != '' AND (pos LIKE '%noun%' OR pos LIKE '%verb%' OR pos LIKE '%adj%')"
+    private const val DAILY_COUNT = "SELECT count(*) FROM entry WHERE $DAILY_WHERE"
+    private const val DAILY_PICK = "SELECT id, head, reading, pos, gloss, common FROM entry WHERE $DAILY_WHERE ORDER BY id"
+
     private fun query(db: SQLiteDatabase, where: String, args: Array<String>, limit: Int): List<Entry> {
         val sql = "SELECT e.id, e.head, e.reading, e.pos, e.gloss, e.common FROM key k " +
             "JOIN entry e ON e.id = k.id WHERE $where GROUP BY e.id " +

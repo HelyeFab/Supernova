@@ -154,6 +154,14 @@ object CardRepo {
         return emptyMap()
     }
 
+    /** JP fork: the [day]'s note among those matching [search], stable for the whole day. */
+    fun dailyCard(ctx: Context, search: String, day: Long): StruggleCard? {
+        val ids = noteIds(ctx, search).sorted()
+        if (ids.isEmpty()) return null
+        val nid = ids[Math.floorMod(day * 7919L, ids.size.toLong()).toInt()]
+        return cardFor(ctx, nid, 0)
+    }
+
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun modelFieldNames(ctx: Context): Map<Long, List<String>> {
