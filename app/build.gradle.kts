@@ -39,6 +39,8 @@ android {
         }
         buildConfigField("String", "TTS_KEY", "\"${jpLocal.getProperty("tts.key", "")}\"")
         buildConfigField("String", "TTS_URL", "\"https://tts.appsparkle.org/v1/audio/speech\"")
+        // JP fork: optional private build defaults; both can be overridden in Reader settings.
+        buildConfigField("String", "READER_CLAUDE_KEY", "\"${jpLocal.getProperty("claude.key", "")}\"")
         // JP fork: Chiba's latest Telegram ping, for the word-of-the-day card.
         buildConfigField("String", "CHIBA_WIDGET_TOKEN", "\"${jpLocal.getProperty("chiba.widget.token", "")}\"")
         buildConfigField("String", "CHIBA_PING_URL", "\"https://chiba.appsparkle.org/api/ping-current\"")
@@ -91,6 +93,8 @@ android {
     // a dev machine differs from F-Droid's NDK-less build and the reproducible
     // build check fails.
     packaging {
+        // Kuromoji's core and IPADIC jars both carry these notices; preserve both.
+        resources.merges += setOf("META-INF/CONTRIBUTORS.md", "META-INF/LICENSE.md")
         jniLibs {
             keepDebugSymbols += "**/libdatastore_shared_counter.so"
         }
@@ -131,6 +135,9 @@ detekt {
 }
 
 dependencies {
+    // JP fork: bundled Japanese OCR and offline morphology (no first-use model download).
+    implementation(libs.mlkit.japanese)
+    implementation(libs.kuromoji.ipadic)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

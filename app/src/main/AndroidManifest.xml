@@ -102,6 +102,39 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Supernova">
 
+        <!-- JP fork: dialog task returns to the app being read, never the home task. -->
+        <activity
+            android:name=".jp.reader.ReaderActivity"
+            android:launchMode="singleTask"
+            android:exported="true"
+            android:label="@string/jp_reader_title"
+            android:excludeFromRecents="true"
+            android:taskAffinity="${applicationId}.reader"
+            android:theme="@style/Theme.Supernova.Reader"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name=".jp.reader.ReaderLauncher"
+            android:targetActivity=".jp.reader.ReaderActivity"
+            android:exported="true"
+            android:label="@string/jp_reader_title"
+            android:icon="@drawable/ic_jp_torii">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Its own task: a distinct
              taskAffinity plus singleTask puts Settings in a separate recents
              card instead of stacking on the home task (which recents never

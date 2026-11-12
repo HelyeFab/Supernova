@@ -405,6 +405,14 @@ object SettingsCatalogue {
                         set = { viewModel.setListMode(it) },
                         subtitle = R.string.jp_list_mode_summary
                     ),
+                // JP fork: Japanese study tools belong to the launcher settings too.
+                SettingItem.Row(
+                    R.string.jp_reader_title,
+                    subtitle = { context.getString(R.string.jp_reader_summary) },
+                    onClick = { context.startActivity(android.content.Intent(context,
+                        com.supernova.launcher.jp.reader.ReaderActivity::class.java)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                ),
                     SettingItem.Toggle(
                     R.string.infinite_scroll,
                     get = { it.infiniteScroll },

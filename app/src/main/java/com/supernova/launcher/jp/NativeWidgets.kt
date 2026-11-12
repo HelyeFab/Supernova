@@ -40,6 +40,9 @@ object NativeWidgets {
     )
 
     private val specs = listOf(
+        Spec(com.supernova.launcher.jp.reader.ReaderCardView.KIND, R.string.jp_reader_title, R.drawable.ic_jp_torii, 4, 1) { c, _ ->
+            com.supernova.launcher.jp.reader.ReaderCardView(c)
+        },
         // List mode's home page (placed by the setting, not offered in the picker).
         Spec(com.supernova.launcher.jp.list.ListHomeView.KIND, R.string.jp_list_mode, R.drawable.ic_jp_torii, 5, 6) { c, _ ->
             com.supernova.launcher.jp.list.ListHomeView(c)

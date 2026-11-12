@@ -98,7 +98,8 @@
         <item quantity="other">%d folders</item>
     </plurals>
     <string name="gestures">Gestures</string>
-    <string name="accessibility_description">Lets Supernova lock the screen from a gesture. Optional; no screen content is read.</string>
+    <!-- JP fork: this service also hosts the explicitly invoked Japanese reader. -->
+    <string name="accessibility_description">@string/jp_reader_accessibility_description</string>
     <string name="lock_needs_accessibility">Enable Supernova in Accessibility settings to lock the screen</string>
     <string name="hidden_apps">Hidden apps</string>
     <string name="drawer_groups">Drawer groups</string>

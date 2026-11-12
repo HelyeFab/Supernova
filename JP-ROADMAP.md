@@ -102,3 +102,38 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
 - Later 2026-11-12: list mode left-edge swipe (first 40dp) always opens the cards feed; feed cards
   recolour to the feed card's text colour (`FeedThemed`, `CardBase.applyFeedColors`); easy news shows 3
   whole headlines. NHK Easy furigana + ▶ 聞く verified on the phone.
+
+## Japanese screen reader (2026-11-12)
+- `jp/reader/`: an integrated first reading loop, using the launcher's existing JMdict and
+  AivisSpeech. Floating **読** accessibility overlay → frozen screen → select a region (or whole
+  screen) → bundled Japanese ML Kit OCR → editable source → sentence navigation, optional furigana,
+  tappable words, offline vocabulary/dictionary forms, normal/slow audio, Claude grammar and follow-ups.
+- Entry points: **Home screen settings → 読む · Japanese reader**, its drawer entry, Android
+  **PROCESS_TEXT** / text sharing, and a **Built-in (日本語)** home/feed widget.
+  Reader Settings controls the floating button; drag it vertically, hold it for settings.
+  Accessibility must be enabled for Supernova JP; screen capture requires Android 11+.
+  Lock/recents gestures retain their existing service and behavior. No accessibility-node scraping.
+- OCR and dictionary lookup run locally. Listen sends just the selected Japanese to AivisSpeech;
+  Explain/Ask sends the current sentence (or All) to Claude. Captured images stay in private cache;
+  Claude receives text, not the screenshot. Source corrections are explicit; no silent AI rewriting.
+- Private build defaults: `tts.key` and optional `claude.key` in gitignored `local.properties`.
+  Claude key/model can be changed in Reader Settings (default `claude-haiku-4-5`). Reader preferences
+  are outside launcher file-domain backups. Missing keys and HTTP failures produce visible errors.
+- Kuromoji/IPADIC handles segmentation, dictionary forms, and conjugated readings. Causative/passive
+  suffixes remain attached to the verb: 食べさせられた → 食べる. Existing dictionary search now has an
+  exact-only lookup for reader words; it never substitutes a prefix match for an unknown word.
+- Audio cancellation also invalidates pending downloads, so Stop/changing sentence/closing cannot
+  start a stale clip. Shared widget audio uses the same corrected player.
+- Validation: 463 unit tests; targeted Android tests for OCR, successive reader intents and recreation.
+  The full lint gate has existing JP findings outside the reader; do not regenerate its baseline.
+- Later: Anki sentence/audio export, persistent reading history, improved vertical-page ordering,
+  and optional screenshot-assisted OCR correction. Protected app screens remain uncapturable;
+  text sharing/selection is the alternative where the source app supports it.
+- Honor live check: captured NHK's 美しい景色を見ることができました。 exactly, with furigana,
+  vocabulary, completed audio playback and a returned Claude translation/grammar breakdown.
+  Narrow screenshot previews now keep their aspect ratio;
+  region actions divide the available width equally. Exact dictionary lookup prefers the observed
+  spelling before frequency ties (こと must select the kana noun, not the homophone 琴).
+  Three targeted Android tests cover OCR, repeated intents/recreation and that dictionary regression.
+- MagicOS can remove Supernova's accessibility entry asynchronously after an update: restore it
+  again after the package update settles, preserving other enabled services, and check Bound services.

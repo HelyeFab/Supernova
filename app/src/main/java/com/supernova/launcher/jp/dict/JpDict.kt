@@ -24,6 +24,13 @@ object JpDict {
     private var db: SQLiteDatabase? = null
     private var unavailable = false
 
+    // JP fork: screen-reader word lookup must never substitute a prefix match.
+    @Synchronized
+    fun exact(context: Context, word: String, limit: Int = 5): List<Entry> {
+        val database = open(context) ?: return emptyList()
+        return query(database, "k.k = ?", arrayOf(hiragana(word)), limit, preferredHead = word)
+    }
+
     // The query as a lookup key: Japanese folded to hiragana, or romaji
     // converted; null when it is neither (an ordinary Latin app query).
     fun keyFor(query: String): String? {
@@ -61,11 +68,15 @@ object JpDict {
     private const val DAILY_COUNT = "SELECT count(*) FROM entry WHERE $DAILY_WHERE"
     private const val DAILY_PICK = "SELECT id, head, reading, pos, gloss, common FROM entry WHERE $DAILY_WHERE ORDER BY id"
 
-    private fun query(db: SQLiteDatabase, where: String, args: Array<String>, limit: Int): List<Entry> {
+    private fun query(db: SQLiteDatabase, where: String, args: Array<String>, limit: Int, preferredHead: String? = null): List<Entry> {
+        // The observed spelling beats a homophone: こと (thing) must not silently
+        // become 琴 (instrument) just because their frequency scores tie.
+        val preference = if (preferredHead != null) "CASE WHEN e.head = ? THEN 0 ELSE 1 END, " else ""
+        val boundArgs = if (preferredHead != null) args + preferredHead else args
         val sql = "SELECT e.id, e.head, e.reading, e.pos, e.gloss, e.common FROM key k " +
             "JOIN entry e ON e.id = k.id WHERE $where GROUP BY e.id " +
-            "ORDER BY e.common DESC, e.rank DESC, length(e.head) LIMIT $limit"
-        return db.rawQuery(sql, args).use { c ->
+            "ORDER BY ${preference}e.common DESC, e.rank DESC, length(e.head) LIMIT $limit"
+        return db.rawQuery(sql, boundArgs).use { c ->
             buildList {
                 while (c.moveToNext()) {
                     add(Entry(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getString(4), c.getInt(5) == 1))

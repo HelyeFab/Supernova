@@ -3,17 +3,21 @@ package com.supernova.launcher
 import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 
-// Optional service: the only way for a third-party launcher to lock the
-// screen on API 28+ without Device Admin. Nothing else depends on it, and
-// gestures bound to lock fall back to prompting the user to enable it.
+// Optional lock/recents actions. JP fork: also hosts the explicitly invoked
+// Japanese reader's screenshot overlay; it never retrieves accessibility nodes.
 class SupernovaAccessibilityService : AccessibilityService() {
+    // JP fork: explicitly invoked Japanese screen reader; also available outside home.
+    private var reader: com.supernova.launcher.jp.reader.ReaderOverlay? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        reader = com.supernova.launcher.jp.reader.ReaderOverlay(this).also { it.connect() }
     }
 
     override fun onDestroy() {
+        reader?.destroy()
+        reader = null
         if (instance === this) instance = null
         super.onDestroy()
     }
@@ -22,7 +26,11 @@ class SupernovaAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() = Unit
 
+    // JP fork: keep existing lock/recents actions independent of the reader.
     companion object {
+        fun refreshReader() { instance?.reader?.refresh() }
+        fun readScreen(): Boolean = instance?.reader?.let { it.capture(); true } ?: false
+
         @Volatile
         private var instance: SupernovaAccessibilityService? = null
 

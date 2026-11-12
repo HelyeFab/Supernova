@@ -1,4 +1,14 @@
 <resources>
+    <!-- JP fork: a reading sheet over the app that supplied the Japanese. -->
+    <style name="Theme.Supernova.Reader" parent="Theme.Supernova.Transparent">
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowShowWallpaper">false</item>
+        <item name="android:windowMinWidthMajor">94%</item>
+        <item name="android:windowMinWidthMinor">94%</item>
+    </style>
     <style name="Theme.Supernova" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorControlHighlight">@color/rippleHighlight</item>

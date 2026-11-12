@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- JP fork strings. Kept in their own file so upstream merges of strings.xml stay clean. -->
 <resources>
+    <string name="jp_reader_card_action">聞く · 言葉 · 文法　Open the Japanese reader ↗</string>
+    <string name="jp_reader_region_help">囲んで読む · Drag around the Japanese</string>
+    <string name="jp_reader_welcome">Japanese help in any app. Enable the reading button in Settings, then open Japanese content and tap 読. You can also share text here or use Android’s text-selection menu.</string>
+    <string name="jp_reader_no_text">No text selected</string>
+    <string name="jp_reader_invalid_capture">Invalid capture. Tap 読 to try again.</string>
+    <string name="jp_reader_ocr_loading">Reading Japanese on your phone…</string>
+    <string name="jp_reader_ocr_empty">No Japanese text found. Try a tighter region, or enter the text below.</string>
+    <string name="jp_reader_source_hint">Tap a word for its meaning. Check the source against the screen; OCR and automatic readings can be wrong.</string>
+    <string name="jp_reader_audio_loading">Preparing audio…</string>
+    <string name="jp_reader_audio_error">Audio unavailable: %1$s</string>
+    <string name="jp_reader_audio_done">Tap a word to explore it, or ask Claude about the sentence.</string>
+    <string name="jp_reader_explain">Explain with Claude</string>
+    <string name="jp_reader_thinking">Claude is thinking…</string>
+    <string name="jp_reader_floating">Show floating 読 button in other apps</string>
+    <string name="jp_reader_title">読む · Japanese reader</string>
+    <string name="jp_reader_summary">Read any screen: audio, vocabulary and Claude grammar</string>
+    <string name="jp_reader_accessibility_description">Lets Supernova lock the screen from a gesture and, when you tap 読, capture a screen region for Japanese reading. OCR and dictionary lookups run on your phone. Text is sent to the speech service when you listen, and to Claude only when you ask for an explanation.</string>
     <string name="jp_widgets_group">Built-in (日本語)</string>
     <string name="jp_native_widget_row_subtitle">Built-in widget</string>
     <plurals name="jp_widget_count"><item quantity="one">%d widget</item><item quantity="other">%d widgets</item></plurals>
