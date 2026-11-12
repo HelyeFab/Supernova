@@ -25,6 +25,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.supernova.launcher.R
+import androidx.core.view.isVisible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -278,12 +279,14 @@ private class RegionView(
     private var submitted = false
     private val density = resources.displayMetrics.density
     private val read: TextView
+    private val help: View
+    private val actions: View
 
     init {
         setWillNotDraw(false)
         isFocusableInTouchMode = true
         // Same sumi sheet and pills as the reader, floating clear of the system bars.
-        val help = android.widget.LinearLayout(context).apply {
+        help = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             background = ReaderUi.rounded(ReaderUi.SHEET, dp(22).toFloat(), dp(1), ReaderUi.LINE)
             setPadding(dp(18), dp(12), dp(18), dp(12))
@@ -295,15 +298,15 @@ private class RegionView(
         addView(help, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.TOP).apply {
             topMargin = dp(52); leftMargin = dp(16); rightMargin = dp(16)
         })
-        val actions = android.widget.LinearLayout(context).apply {
+        actions = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = ReaderUi.rounded(ReaderUi.SHEET, dp(30).toFloat(), dp(1), ReaderUi.LINE)
             setPadding(dp(8), dp(8), dp(8), dp(8))
         }
         fun gap() = View(context).apply { layoutParams = android.widget.LinearLayout.LayoutParams(dp(8), 1) }
-        actions.addView(ReaderUi.pill(context, "Cancel", ReaderUi.Pill.QUIET) { onCancel() },
-            android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        actions.addView(ReaderUi.iconPill(context, R.drawable.jp_ic_close, "Cancel") { onCancel() },
+            android.widget.LinearLayout.LayoutParams(dp(52), dp(48)))
         actions.addView(gap())
         actions.addView(ReaderUi.pill(context, "Whole screen") { selection.set(0f, 0f, width.toFloat(), height.toFloat()); submit() },
             android.widget.LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
@@ -347,6 +350,10 @@ private class RegionView(
         val w = width.toFloat(); val h = height.toFloat()
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                // The instructions have done their job once you touch; get them off the text.
+                // The action bar steps aside while you drag and comes back when you lift.
+                if (help.isVisible) help.animate().alpha(0f).setDuration(150).withEndAction { help.isVisible = false }
+                actions.animate().alpha(0.12f).setDuration(120)
                 startX = event.x; startY = event.y; dragging = true
                 origin.set(selection)
                 mode = pickMode(event.x, event.y)
@@ -375,10 +382,12 @@ private class RegionView(
                 }
                 read.isEnabled = selection.width() > dp(8) && selection.height() > dp(8)
                 read.alpha = if (read.isEnabled) 1f else 0.4f
-                if (event.actionMasked == MotionEvent.ACTION_UP) { dragging = false; performClick() }
+                if (event.actionMasked == MotionEvent.ACTION_UP) {
+                    dragging = false; actions.animate().alpha(1f).setDuration(150); performClick()
+                }
                 invalidate()
             }
-            MotionEvent.ACTION_CANCEL -> dragging = false
+            MotionEvent.ACTION_CANCEL -> { dragging = false; actions.animate().alpha(1f).setDuration(150) }
         }
         return true
     }
