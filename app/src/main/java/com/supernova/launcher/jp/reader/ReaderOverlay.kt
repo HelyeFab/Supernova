@@ -267,6 +267,14 @@ private class RegionView(
     private var startX = 0f
     private var startY = 0f
     private var dragging = false
+    // What the current drag does: draw a new box, move the box, or pull some of its edges.
+    private enum class Mode { DRAW, MOVE, RESIZE }
+    private var mode = Mode.DRAW
+    private val origin = RectF()
+    private var pullLeft = false
+    private var pullTop = false
+    private var pullRight = false
+    private var pullBottom = false
     private var submitted = false
     private val density = resources.displayMetrics.density
     private val read: TextView
@@ -315,18 +323,46 @@ private class RegionView(
             paint.color = 0xFFE3C99C.toInt(); paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(2).toFloat()
             canvas.drawRoundRect(selection, dp(4).toFloat(), dp(4).toFloat(), paint)
             paint.style = Paint.Style.FILL
+            // Corner handles: hints that the box can be pulled and moved.
+            val r = dp(7).toFloat()
+            canvas.drawCircle(selection.left, selection.top, r, paint)
+            canvas.drawCircle(selection.right, selection.top, r, paint)
+            canvas.drawCircle(selection.left, selection.bottom, r, paint)
+            canvas.drawCircle(selection.right, selection.bottom, r, paint)
         }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (submitted) return true
+        val w = width.toFloat(); val h = height.toFloat()
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { startX = event.x; startY = event.y; dragging = true }
+            MotionEvent.ACTION_DOWN -> {
+                startX = event.x; startY = event.y; dragging = true
+                origin.set(selection)
+                mode = pickMode(event.x, event.y)
+            }
             MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> if (dragging) {
-                selection.set(minOf(startX, event.x).coerceIn(0f, width.toFloat()),
-                    minOf(startY, event.y).coerceIn(0f, height.toFloat()),
-                    maxOf(startX, event.x).coerceIn(0f, width.toFloat()),
-                    maxOf(startY, event.y).coerceIn(0f, height.toFloat()))
+                val dx = event.x - startX; val dy = event.y - startY
+                when (mode) {
+                    Mode.DRAW -> selection.set(minOf(startX, event.x).coerceIn(0f, w), minOf(startY, event.y).coerceIn(0f, h),
+                        maxOf(startX, event.x).coerceIn(0f, w), maxOf(startY, event.y).coerceIn(0f, h))
+                    // The whole box follows the finger and stops flush against any screen edge.
+                    Mode.MOVE -> {
+                        val ox = dx.coerceIn(-origin.left, w - origin.right)
+                        val oy = dy.coerceIn(-origin.top, h - origin.bottom)
+                        selection.set(origin.left + ox, origin.top + oy, origin.right + ox, origin.bottom + oy)
+                    }
+                    // Pulling an edge or corner outward reaches the very edge of the screen, which a
+                    // fresh drag can't (MagicOS keeps edge swipes for its back gesture).
+                    Mode.RESIZE -> {
+                        val min = dp(24).toFloat()
+                        val left = if (pullLeft) (origin.left + dx).coerceIn(0f, origin.right - min) else origin.left
+                        val top = if (pullTop) (origin.top + dy).coerceIn(0f, origin.bottom - min) else origin.top
+                        val right = if (pullRight) (origin.right + dx).coerceIn(origin.left + min, w) else origin.right
+                        val bottom = if (pullBottom) (origin.bottom + dy).coerceIn(origin.top + min, h) else origin.bottom
+                        selection.set(left, top, right, bottom)
+                    }
+                }
                 read.isEnabled = selection.width() > dp(8) && selection.height() > dp(8)
                 read.alpha = if (read.isEnabled) 1f else 0.4f
                 if (event.actionMasked == MotionEvent.ACTION_UP) { dragging = false; performClick() }
@@ -335,6 +371,34 @@ private class RegionView(
             MotionEvent.ACTION_CANCEL -> dragging = false
         }
         return true
+    }
+
+    /** Near an edge or corner of the box resizes it, inside moves it, anywhere else draws anew. */
+    private fun pickMode(x: Float, y: Float): Mode {
+        if (selection.width() < dp(8) || selection.height() < dp(8)) return Mode.DRAW
+        val grab = dp(28).toFloat()
+        val withinY = y in selection.top - grab..selection.bottom + grab
+        val withinX = x in selection.left - grab..selection.right + grab
+        pullLeft = withinY && abs(x - selection.left) < grab
+        pullRight = withinY && !pullLeft && abs(x - selection.right) < grab
+        pullTop = withinX && abs(y - selection.top) < grab
+        pullBottom = withinX && !pullTop && abs(y - selection.bottom) < grab
+        return when {
+            pullLeft || pullRight || pullTop || pullBottom -> Mode.RESIZE
+            selection.contains(x, y) -> Mode.MOVE
+            else -> Mode.DRAW
+        }
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        // Ask for the edges back from the system back gesture (Android grants up to 200 dp
+        // per edge); the middle of each edge, where the text usually is.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val strip = dp(40); val span = dp(200).coerceAtMost(height)
+            val top = (height - span) / 2
+            systemGestureExclusionRects = listOf(Rect(0, top, strip, top + span), Rect(width - strip, top, width, top + span))
+        }
     }
 
     override fun performClick(): Boolean { super.performClick(); return true }

@@ -2,7 +2,7 @@
 <!-- JP fork strings. Kept in their own file so upstream merges of strings.xml stay clean. -->
 <resources>
     <string name="jp_reader_card_action">聞く · 言葉 · 文法　Open the Japanese reader ↗</string>
-    <string name="jp_reader_region_help">囲んで読む · Drag around the Japanese</string>
+    <string name="jp_reader_region_help">囲んで読む · Drag around the Japanese, then move or pull the box</string>
     <string name="jp_reader_welcome">Japanese help in any app. Enable Supernova JP in Accessibility, then double-tap the back of the phone over any Japanese. You can also share text here or use Android’s text-selection menu.</string>
     <string name="jp_reader_no_text">No text selected</string>
     <string name="jp_reader_invalid_capture">Invalid capture. Double-tap the back to try again.</string>
