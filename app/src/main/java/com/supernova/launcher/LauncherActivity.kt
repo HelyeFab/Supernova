@@ -2100,7 +2100,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
 
     private fun applyDockChrome(prefs: LauncherPrefs) {
         val key = listOf(
-            prefs.dockEnabled, prefs.dockBgStyle, prefs.dockBgOpacity,
+            prefs.dockEnabled, prefs.listMode, prefs.dockBgStyle, prefs.dockBgOpacity,
             prefs.dockOverlay, prefs.showScrims,
             prefs.styleConfig, prefs.paletteSource, prefs.paletteSeed,
             prefs.searchBarConfig, prefs.searchBarWidgetId,
@@ -2122,7 +2122,10 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         // relative to a visible dock; PERSISTENT degrades to the bare bottom
         // when the dock is off. WIDGET is a later phase and renders nothing.
         val barConfig = SearchBarConfig.decode(prefs.searchBarConfig).desktop
-        val slot = when (SearchBarPlacement.fromName(barConfig.placement)) {
+        val placement = SearchBarPlacement.fromName(barConfig.placement)
+        val barOn = placement != SearchBarPlacement.NONE && placement != SearchBarPlacement.WIDGET
+        // JP fork: list mode has no dock - the bar sits at the very bottom.
+        val slot = if (prefs.listMode && barOn) BarSlot.BOTTOM else when (placement) {
             SearchBarPlacement.NONE, SearchBarPlacement.WIDGET -> null
             SearchBarPlacement.DOCK_ABOVE -> if (prefs.dockEnabled) BarSlot.ABOVE_DOCK else null
             SearchBarPlacement.DOCK_BELOW -> if (prefs.dockEnabled) BarSlot.BELOW_DOCK else null
@@ -2177,7 +2180,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
                 density = density,
                 landscape = isLandscape,
                 navInset = systemInsets.bottom,
-                dockEnabled = prefs.dockEnabled,
+                dockEnabled = prefs.dockEnabled && !prefs.listMode,
                 dockOverlay = prefs.dockOverlay,
                 dockBehindNav = dockBehindNav,
                 dockFullBleed = dockFullBleed,

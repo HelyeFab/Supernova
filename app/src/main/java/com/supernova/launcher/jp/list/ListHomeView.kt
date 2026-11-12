@@ -57,6 +57,11 @@ class ListHomeView(context: Context) : FrameLayout(context) {
         setShadowLayer(dp(6).toFloat(), 0f, 0f, SHADOW)
     }
     private var rows: List<Row> = emptyList()
+    private var signature = ""
+    // Icons by app key + notification count (the badge), so binds don't re-render.
+    private val icons = HashMap<String, android.graphics.drawable.Drawable?>()
+    private var scrubbing = false
+    private var scrubY = 0f
     private var sectionAt: Map<String, Int> = emptyMap()
     private val onBus: () -> Unit = { rebuild() }
     private val onTop: () -> Unit = { recycler.smoothScrollToPosition(0) }
@@ -71,6 +76,12 @@ class ListHomeView(context: Context) : FrameLayout(context) {
         recycler.clipToPadding = false
         recycler.setPadding(dp(12), dp(8), dp(SCRUB_DP + 8), dp(24))
         recycler.isVerticalScrollBarEnabled = false
+        // The wave follows the rows while the list glides to a section.
+        recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                if (scrubbing) scrubber.wave(scrubY)
+            }
+        })
         addView(recycler, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         addView(scrubber, LayoutParams(dp(SCRUB_DP), LayoutParams.MATCH_PARENT, Gravity.END))
         addView(bubble, LayoutParams(dp(64), dp(64), Gravity.END or Gravity.TOP).apply { marginEnd = dp(SCRUB_DP + 24) })
@@ -131,6 +142,20 @@ class ListHomeView(context: Context) : FrameLayout(context) {
                 out += Row.Header(section)
                 LabelOrder.sorted(inSection) { it.label }.forEach { addApp(it, false) }
             }
+        // Skip identical rebuilds: the launcher state emits often, and a full
+        // rebind mid-scroll costs frames.
+        val sig = out.joinToString("|") { row ->
+            when (row) {
+                is Row.App -> "a${host.appKey(row.app)}${row.favourite}${row.app.label}"
+                is Row.Note -> "n${row.note.key}${row.note.postTime}"
+                is Row.Header -> "h${row.section}"
+                Row.Gap -> "g"
+                Row.Clock -> "c"
+            }
+        }
+        if (sig == signature) return
+        signature = sig
+        icons.clear()
         rows = out
         sectionAt = sections
         adapter.notifyDataSetChanged()
@@ -166,7 +191,7 @@ class ListHomeView(context: Context) : FrameLayout(context) {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            holder.itemView.translationX = 0f
+            holder.itemView.apply { translationX = 0f; scaleX = 1f; scaleY = 1f }
             when (val row = rows[position]) {
                 is Row.App -> (holder.itemView as AppRow).bind(row.app, row.favourite)
                 is Row.Note -> (holder.itemView as NoteRow).bind(row.note)
@@ -234,7 +259,8 @@ class ListHomeView(context: Context) : FrameLayout(context) {
 
         fun bind(app: LaunchableApp, favourite: Boolean) {
             this.app = app
-            icon.setImageDrawable(host?.appIcon(app))
+            val key = (host?.appKey(app) ?: app.packageName)
+            icon.setImageDrawable(icons.getOrPut(key) { host?.appIcon(app) })
             label.text = app.label
             label.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (favourite) 22f else 18f)
             icon.layoutParams = (icon.layoutParams as LayoutParams).apply {
@@ -322,12 +348,14 @@ class ListHomeView(context: Context) : FrameLayout(context) {
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                     parent.requestDisallowInterceptTouchEvent(true)
+                    scrubbing = true
+                    scrubY = ev.y
                     val i = indexAt(ev.y)
                     if (i != active) {
                         active = i
                         val label = labels.getOrNull(i) ?: return
                         val pos = if (label == STAR) 0 else sectionAt[label] ?: return
-                        (recycler.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(pos, 0)
+                        glideTo(pos)
                         bubble.text = label
                         performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                         invalidate()
@@ -338,24 +366,50 @@ class ListHomeView(context: Context) : FrameLayout(context) {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     active = -1
+                    scrubbing = false
                     bubble.visibility = GONE
                     invalidate()
                     for (i in 0 until recycler.childCount) {
-                        recycler.getChildAt(i).animate().translationX(0f).setDuration(ANIM_MS).start()
+                        recycler.getChildAt(i).animate().translationX(0f).scaleX(1f).scaleY(1f)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .setDuration(RELEASE_MS).start()
                     }
                 }
             }
         }
 
-        // Rows near the finger bow out to the left, like a wave under the thumb.
-        private fun wave(y: Float) {
+        // A short glide to the section; from far away, a jump to just short
+        // of it first so the glide stays brief.
+        private fun glideTo(pos: Int) {
+            val lm = recycler.layoutManager as LinearLayoutManager
+            val first = lm.findFirstVisibleItemPosition()
+            if (first >= 0 && kotlin.math.abs(pos - first) > JUMP_ROWS) {
+                lm.scrollToPositionWithOffset((pos + if (pos > first) -LEAD_ROWS else LEAD_ROWS).coerceAtLeast(0), 0)
+            }
+            val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(context) {
+                override fun getVerticalSnapPreference() = SNAP_TO_START
+                override fun calculateSpeedPerPixel(dm: android.util.DisplayMetrics) = GLIDE_MS_PER_INCH / dm.densityDpi
+            }
+            scroller.targetPosition = pos
+            lm.startSmoothScroll(scroller)
+        }
+
+        // Rows near the finger lean towards it and grow a little from their
+        // left edge, so nothing is pushed off the left of the screen.
+        fun wave(y: Float) {
             val sigma = dp(WAVE_SIGMA_DP).toFloat()
             val amp = dp(WAVE_DP).toFloat()
             for (i in 0 until recycler.childCount) {
                 val child = recycler.getChildAt(i)
-                val center = recycler.top + child.top + child.height / 2f
+                if (child is FrameLayout) continue // the clock stays put
+                val center = recycler.top + child.top + child.translationY + child.height / 2f
                 val d = (center - y) / sigma
-                child.translationX = -amp * exp(-d * d)
+                val g = exp(-d * d)
+                child.pivotX = 0f
+                child.pivotY = child.height / 2f
+                child.translationX = amp * g
+                child.scaleX = 1f + WAVE_GROW * g
+                child.scaleY = 1f + WAVE_GROW * g
             }
         }
 
@@ -391,7 +445,12 @@ class ListHomeView(context: Context) : FrameLayout(context) {
         private const val SCRUB_DP = 30
         private const val STEP_DP = 22
         private const val SWIPE_DP = 72
-        private const val WAVE_DP = 26
+        private const val WAVE_DP = 22
+        private const val WAVE_GROW = 0.08f
+        private const val RELEASE_MS = 220L
+        private const val JUMP_ROWS = 24
+        private const val LEAD_ROWS = 6
+        private const val GLIDE_MS_PER_INCH = 22f
         private const val WAVE_SIGMA_DP = 70
         private const val ANIM_MS = 180L
         private val FG = 0xFFF2F2EE.toInt()
