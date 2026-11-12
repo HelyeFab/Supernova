@@ -8,6 +8,17 @@
             android:name=".LeakWatchSetup"
             android:authorities="${applicationId}.leak-watch-setup"
             android:exported="false" />
+        <!-- JP fork: adb-only drawer layout hook (see JpDebugReceiver). DUMP is
+             held by the shell, not by apps. -->
+        <receiver
+            android:name=".jp.JpDebugReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="jp.DUMP_APPS" />
+                <action android:name="jp.SET_GROUPS" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

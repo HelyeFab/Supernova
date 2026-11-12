@@ -1374,13 +1374,14 @@ class DrawerController(
         if (!hideAll) {
             tabs.addTab(tabs.newTab().setText(R.string.drawer_all).also { it.tag = null }, false)
         }
-        if (workTab && !tabsOff) {
-            tabs.addTab(tabs.newTab().setText(R.string.drawer_work).also { it.tag = WorkTab }, false)
-        }
+        // JP fork: the group tabs come before Work, so the themes sit beside All.
         if (!tabsOff) {
             groups.forEach { group ->
                 tabs.addTab(tabs.newTab().setText(group.name).also { it.tag = group }, false)
             }
+        }
+        if (workTab && !tabsOff) {
+            tabs.addTab(tabs.newTab().setText(R.string.drawer_work).also { it.tag = WorkTab }, false)
         }
         if (privateTab) {
             tabs.addTab(tabs.newTab().setText(R.string.drawer_private).also { it.tag = PrivateTab }, false)
