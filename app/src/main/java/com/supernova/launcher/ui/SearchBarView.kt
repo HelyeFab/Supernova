@@ -110,6 +110,23 @@ class SearchBarView @JvmOverloads constructor(
         addView(chip, chipIndex, LayoutParams(dp(CHIP_DP), dp(CHIP_DP)).apply { marginStart = dp(2) })
     }
 
+    // JP fork: a chip that launches an app, in the app's own colours. Left
+    // out when the app isn't installed.
+    private fun addAppChip(packageName: String, labelRes: Int) {
+        val pm = context.packageManager
+        val launch = pm.getLaunchIntentForPackage(packageName) ?: return
+        val chip = ImageView(context)
+        chip.setImageDrawable(runCatching { pm.getApplicationIcon(packageName) }.getOrNull())
+        chip.setPadding(dp(CHIP_PAD_DP), dp(CHIP_PAD_DP), dp(CHIP_PAD_DP), dp(CHIP_PAD_DP))
+        chip.background = borderlessRipple()
+        chip.contentDescription = context.getString(labelRes)
+        chip.setOnClickListener {
+            if (interactive) runCatching { context.startActivity(launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+        chip.tag = CHIP_TAG
+        addView(chip, chipIndex, LayoutParams(dp(CHIP_DP), dp(CHIP_DP)).apply { marginStart = dp(2) })
+    }
+
     private fun addDateChip(textColor: Int) {
         val chip = TextView(context)
         chip.textSize = 13f
@@ -193,6 +210,7 @@ class SearchBarView @JvmOverloads constructor(
                     SearchBarChip.PLAY_STORE ->
                         addIconChip(R.drawable.ic_play_store, R.string.chip_play_store, tint) { openPlayStore() }
                     SearchBarChip.DATE -> addDateChip(resolved.text)
+                    SearchBarChip.CLAUDE -> addAppChip(CLAUDE_PACKAGE, R.string.jp_chip_claude)
                 }
             }
         }
@@ -253,6 +271,7 @@ class SearchBarView @JvmOverloads constructor(
     }
 
     private companion object {
+        private const val CLAUDE_PACKAGE = "com.anthropic.claude"
         const val CHIP_TAG = "search-bar-chip"
         const val CHIP_DP = 36
         // Leaves the 20dp box the magnifier on the left has.

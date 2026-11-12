@@ -20,7 +20,9 @@ enum class SearchBarPlacement {
 // order they appear in the config's chips list. An App drawer chip was
 // removed; a config still naming it decodes without it.
 enum class SearchBarChip {
-    VOICE, ASSISTANT, DATE, PLAY_STORE;
+    VOICE, ASSISTANT, DATE, PLAY_STORE,
+    // JP fork: opens the Claude app, drawn with the app's own icon.
+    CLAUDE;
 
     companion object {
         fun fromName(name: String): SearchBarChip? =

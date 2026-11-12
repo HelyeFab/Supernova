@@ -25,5 +25,6 @@
     <string name="jp_list_move_up">Move up in favourites</string>
     <string name="jp_list_move_down">Move down in favourites</string>
     <string name="jp_list_all_apps">All apps</string>
+    <string name="jp_chip_claude">Claude</string>
     <string name="jp_widget_unknown">Unknown built-in widget</string>
 </resources>

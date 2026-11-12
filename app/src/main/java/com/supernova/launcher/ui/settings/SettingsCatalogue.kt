@@ -999,7 +999,8 @@ object SettingsCatalogue {
                 rows.barChip(SearchBarChip.DATE, R.string.search_bar_chip_date),
                 rows.barChip(SearchBarChip.ASSISTANT, R.string.search_bar_chip_assistant),
                 rows.barChip(SearchBarChip.PLAY_STORE, R.string.chip_play_store),
-                rows.barChip(SearchBarChip.VOICE, R.string.search_bar_chip_voice)
+                rows.barChip(SearchBarChip.VOICE, R.string.search_bar_chip_voice),
+                rows.barChip(SearchBarChip.CLAUDE, R.string.jp_chip_claude)
             )
         ),
         // The drawer field's own page, opened from the same Search bars group.
