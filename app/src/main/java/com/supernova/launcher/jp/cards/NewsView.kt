@@ -65,7 +65,9 @@ class NewsView(context: Context) : CardBase(context, "ニュース · NHK") {
             return
         }
         val now = System.currentTimeMillis()
-        items.take(MAX_ITEMS).forEachIndexed { i, item ->
+        // Easy-news items carry furigana and a summary: three fit the card whole.
+        val max = if (items.any { it.outline.isNotEmpty() }) MAX_EASY_ITEMS else MAX_ITEMS
+        items.take(max).forEachIndexed { i, item ->
             body.addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(0, if (i == 0) 0 else dp(9), 0, 0)
@@ -140,6 +142,7 @@ class NewsView(context: Context) : CardBase(context, "ニュース · NHK") {
         private const val EASY = "https://nhk.selfmind.dev/news"
         private const val FEED = "https://news.web.nhk/n-data/conf/na/rss/cat0.xml"
         private const val MAX_ITEMS = 5
+        private const val MAX_EASY_ITEMS = 3
         private const val MAX_AGE_MS = 20 * 60_000L
         private const val EASY_DAYS = 14L
         private const val PREFS = "jp_news"

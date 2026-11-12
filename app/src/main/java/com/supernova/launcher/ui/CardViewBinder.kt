@@ -148,7 +148,9 @@ class CardViewBinder(private val callbacks: Callbacks) {
             FeaturedType.WIDGET -> {
                 // JP fork: a built-in widget featured on the card.
                 val hosted = if (com.supernova.launcher.jp.NativeWidgets.isNative(card.widgetProvider)) {
-                    com.supernova.launcher.jp.NativeWidgets.cardView(context, card.id, card.widgetProvider!!)
+                    com.supernova.launcher.jp.NativeWidgets.cardView(context, card.id, card.widgetProvider!!).also {
+                        (it as? com.supernova.launcher.jp.cards.FeedThemed)?.applyFeedColors(textColor)
+                    }
                 } else {
                     card.appWidgetId?.let(callbacks.widgetView)
                 }
