@@ -26,4 +26,9 @@ object ListBus {
     fun add(l: () -> Unit) { listeners += l }
     fun remove(l: () -> Unit) { listeners -= l }
     fun changed() = main.post { listeners.toList().forEach { it() } }
+
+    private val tops = LinkedHashSet<() -> Unit>()
+    fun addTop(l: () -> Unit) { tops += l }
+    fun removeTop(l: () -> Unit) { tops -= l }
+    fun scrollTop() = main.post { tops.toList().forEach { it() } }
 }

@@ -319,6 +319,10 @@ class WidgetController(
     private var nativeTouch = false
     private val nativeOwners = java.util.Collections.newSetFromMap(java.util.WeakHashMap<View, Boolean>())
 
+    // JP fork: a touch starting on a list-mode app row (see LauncherActivity's feed check).
+    fun listRowUnder(rawX: Float, rawY: Float): Boolean =
+        nativeOwners.any { it is com.supernova.launcher.jp.list.ListHomeView && it.rowAt(rawX, rawY) }
+
     private fun nativeOwnerUnder(rawX: Float, rawY: Float): Boolean = nativeOwners.any { v ->
         if (!v.isShown) return@any false
         v.getLocationOnScreen(widgetHitLocation)

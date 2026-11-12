@@ -323,6 +323,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
     // needs no conversion. Read by the item menus when they open. A drawer
     // folder's card, its own full-screen window, sets it too (routeItemGesture).
     private var menuTouchX = 0f
+    private var listRowTouch = false
     private val LIST_SHORTCUTS = 5
     // Edit mode's "+" page asked for a real page, maybe with a pick from the
     // sheet to land on it. Once the model carries the page, edit mode closes
@@ -978,7 +979,11 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         // the drawer pull an upward one, each cancelling the frame a few
         // pixels in; a downward one would fire the swipe-down on the lift.
         if (widgets.trackResizeDrag(ev)) return true
-        if (::feed.isInitialized) {
+        // JP fork: a swipe that starts on a list-mode app row is the row's.
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            listRowTouch = viewModel.state.value.prefs.listMode && widgets.listRowUnder(ev.rawX, ev.rawY)
+        }
+        if (::feed.isInitialized && !(listRowTouch && !feed.isOpen)) {
             when (feed.onTouch(ev)) {
                 // The feed owns the rest of this stream (edge-swipe drag).
                 FeedController.TouchResult.CONSUMED -> return true
@@ -2452,6 +2457,12 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         // closing - a drag in flight included.
         val prefs = viewModel.state.value.prefs
         val reachedHome = wasOnDefaultPage || !prefs.homeButtonOnMainPage
+        // JP fork: in list mode a home press on home scrolls the list to its
+        // top (clock and favourites) instead of opening the drawer.
+        if (prefs.listMode) {
+            if (!cameFromBackground && reachedHome && !closed) com.supernova.launcher.jp.list.ListBus.scrollTop()
+            return
+        }
         if (!cameFromBackground && reachedHome && !closed && !drag.isActive) {
             val action = HomeButtonAction.effective(prefs.homeButtonAction, prefs.homeSearch)
             if (action != GestureAction.NONE) actions.run(GestureBinding(action))
@@ -4345,9 +4356,11 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
     }
 
     private fun addListFavouriteRows(menu: SupernovaPopupMenu, app: LaunchableApp) {
-        val key = viewModel.hiddenKey(app)
         val favs = viewModel.listFavourites()
-        val at = favs.indexOf(key)
+        val component = "/${app.packageName}/${app.className}"
+        // A favourite stored for an App Twin / work copy still counts for the app.
+        val at = favs.indexOfFirst { it == viewModel.hiddenKey(app) || it.endsWith(component) }
+        val key = favs.getOrNull(at) ?: viewModel.hiddenKey(app)
         if (at < 0) {
             menu.addRow(getString(R.string.jp_list_favourite_add), R.drawable.ic_menu_add) {
                 viewModel.setListFavourites(favs + key)

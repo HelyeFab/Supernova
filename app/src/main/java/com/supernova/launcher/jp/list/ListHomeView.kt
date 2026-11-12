@@ -37,6 +37,7 @@ import kotlin.math.exp
 class ListHomeView(context: Context) : FrameLayout(context) {
 
     private sealed interface Row {
+        data object Clock : Row
         data class App(val app: LaunchableApp, val favourite: Boolean) : Row
         data class Note(val app: LaunchableApp, val note: NotificationPreview) : Row
         data class Header(val section: String) : Row
@@ -58,6 +59,9 @@ class ListHomeView(context: Context) : FrameLayout(context) {
     private var rows: List<Row> = emptyList()
     private var sectionAt: Map<String, Int> = emptyMap()
     private val onBus: () -> Unit = { rebuild() }
+    private val onTop: () -> Unit = { recycler.smoothScrollToPosition(0) }
+    // The serif clock heads the list (date, time, battery, moon, paw, weather).
+    private val clock by lazy { com.supernova.launcher.jp.home.SerifClockView(context) }
     private val slop = ViewConfiguration.get(context).scaledTouchSlop
 
     init {
@@ -75,24 +79,49 @@ class ListHomeView(context: Context) : FrameLayout(context) {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         ListBus.add(onBus)
+        ListBus.addTop(onTop)
         rebuild()
     }
 
     override fun onDetachedFromWindow() {
         ListBus.remove(onBus)
+        ListBus.removeTop(onTop)
         super.onDetachedFromWindow()
+    }
+
+    // True when a touch at this screen point starts on an app row: its
+    // rightward swipe is the row's (shortcuts), not the feed pane's.
+    fun rowAt(rawX: Float, rawY: Float): Boolean {
+        if (!isShown) return false
+        val at = IntArray(2)
+        for (i in 0 until recycler.childCount) {
+            val child = recycler.getChildAt(i)
+            if (child !is AppRow) continue
+            child.getLocationOnScreen(at)
+            if (rawX >= at[0] && rawX < at[0] + child.width && rawY >= at[1] && rawY < at[1] + child.height) return true
+        }
+        return false
     }
 
     private fun rebuild() {
         val host = host ?: return
+        // One row per app: a work-profile or App Twin copy only when there is
+        // no personal one. Favourites still find their app by package.
         val apps = host.listApps()
+            .sortedBy { if (it.userSerial == 0L) 0 else 1 }
+            .distinctBy { it.packageName + "/" + it.className }
         val byKey = apps.associateBy(host::appKey)
+        val byComponent = apps.associateBy { it.packageName + "/" + it.className }
         val out = ArrayList<Row>()
+        out += Row.Clock
         fun addApp(app: LaunchableApp, fav: Boolean) {
             out += Row.App(app, fav)
             host.notificationsFor(app).take(MAX_NOTES).forEach { out += Row.Note(app, it) }
         }
-        host.listFavourites().mapNotNull(byKey::get).forEach { addApp(it, true) }
+        host.listFavourites()
+            .mapNotNull { key -> byKey[key] ?: byComponent[key.substringAfter('/')] }
+            .distinct()
+            .forEach { addApp(it, true) }
         out += Row.Gap
         val sections = LinkedHashMap<String, Int>()
         apps.groupBy { ListSections.sectionOf(it.label) }
@@ -114,13 +143,18 @@ class ListHomeView(context: Context) : FrameLayout(context) {
     private inner class Adapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         override fun getItemCount() = rows.size
         override fun getItemViewType(position: Int) = when (rows[position]) {
-            is Row.App -> 0; is Row.Note -> 1; is Row.Header -> 2; Row.Gap -> 3
+            is Row.App -> 0; is Row.Note -> 1; is Row.Header -> 2; Row.Gap -> 3; Row.Clock -> 4
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             val view: View = when (viewType) {
                 0 -> AppRow()
                 1 -> NoteRow()
+                4 -> FrameLayout(context).apply {
+                    // The clock keeps its own size; it moves between rebinds.
+                    (clock.parent as? ViewGroup)?.removeView(clock)
+                    addView(clock, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(CLOCK_DP)))
+                }
                 2 -> text(13f, SUB).apply {
                     typeface = Typeface.DEFAULT_BOLD
                     setPadding(dp(6), dp(14), 0, dp(4))
@@ -137,7 +171,7 @@ class ListHomeView(context: Context) : FrameLayout(context) {
                 is Row.App -> (holder.itemView as AppRow).bind(row.app, row.favourite)
                 is Row.Note -> (holder.itemView as NoteRow).bind(row.note)
                 is Row.Header -> (holder.itemView as TextView).text = row.section
-                Row.Gap -> Unit
+                Row.Gap, Row.Clock -> Unit
             }
         }
     }
@@ -179,6 +213,10 @@ class ListHomeView(context: Context) : FrameLayout(context) {
                         if (!claimed && dx > slop / 2 && dx > abs(ev.rawY - downY)) {
                             claimed = true
                             parent.requestDisallowInterceptTouchEvent(true)
+                            // No long-press menu once the swipe is ours.
+                            val cancel = MotionEvent.obtain(ev).apply { action = MotionEvent.ACTION_CANCEL }
+                            gestures.onTouchEvent(cancel)
+                            cancel.recycle()
                         }
                         if (claimed) translationX = (dx * 0.5f).coerceAtMost(dp(SWIPE_DP).toFloat())
                     }
@@ -348,11 +386,12 @@ class ListHomeView(context: Context) : FrameLayout(context) {
     companion object {
         const val KIND = "jp-list"
         private const val STAR = "★"
+        private const val CLOCK_DP = 210
         private const val MAX_NOTES = 2
         private const val SCRUB_DP = 30
         private const val STEP_DP = 22
         private const val SWIPE_DP = 72
-        private const val WAVE_DP = 46
+        private const val WAVE_DP = 26
         private const val WAVE_SIGMA_DP = 70
         private const val ANIM_MS = 180L
         private val FG = 0xFFF2F2EE.toInt()

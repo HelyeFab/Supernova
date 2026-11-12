@@ -1262,7 +1262,11 @@ class LauncherViewModel(
                 preferences.set(Pref.listPrevPage, previous)
                 if (prefs.listFavorites.isBlank()) {
                     val counts = launchCounts()
-                    val seed = visibleApps().sortedByDescending { counts[hiddenKey(it)] ?: 0 }
+                    // Personal apps only, and never the launcher itself.
+                    val seed = visibleApps()
+                        .filter { it.userSerial == 0L && it.packageName != getApplication<Application>().packageName }
+                        .distinctBy { it.packageName }
+                        .sortedByDescending { counts[hiddenKey(it)] ?: 0 }
                         .take(LIST_SEED_FAVOURITES).map(::hiddenKey)
                     preferences.set(Pref.listFavorites, seed.joinToString("\n"))
                 }
