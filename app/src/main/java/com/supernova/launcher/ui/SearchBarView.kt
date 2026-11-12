@@ -35,6 +35,10 @@ class SearchBarView @JvmOverloads constructor(
 
     var onTap: (() -> Unit)? = null
 
+    // JP fork: the magnifying glass has its own tap (Google search); null
+    // leaves it part of the bar.
+    var onIconTap: (() -> Unit)? = null
+
     // The settings editor embeds a live preview; chips must not fire real
     // intents from inside the dialog.
     var interactive = true
@@ -80,12 +84,17 @@ class SearchBarView @JvmOverloads constructor(
 
         searchIcon.setImageResource(R.drawable.ic_search)
         searchIcon.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
-        addView(searchIcon, LayoutParams(dp(20), dp(20)))
+        // A finger-sized target around the 20dp glyph; the bar's own tap
+        // still covers the rest.
+        searchIcon.setPadding(dp(8), dp(8), dp(8), dp(8))
+        searchIcon.setOnClickListener { if (interactive) (onIconTap ?: onTap)?.invoke() }
+        searchIcon.setOnLongClickListener { onLongPress?.invoke(this); onLongPress != null }
+        addView(searchIcon, LayoutParams(dp(36), dp(36)).apply { marginStart = -dp(8) })
 
         hint.setText(R.string.search_hint)
         hint.textSize = 15f
         hint.maxLines = 1
-        addView(hint, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12) })
+        addView(hint, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(4) })
 
     }
 

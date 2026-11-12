@@ -1435,6 +1435,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         // the drawer's keyboard setting. The bar's search chip and the
         // gestures still reach the global overlay.
         binding.desktopSearchBar.onTap = { openDrawer(forSearch = true) }
+        binding.desktopSearchBar.onIconTap = ::openGoogleSearch
         binding.desktopSearchBar.onLongPress = { anchor -> showSearchBarMenu(anchor) }
     }
 
@@ -2469,6 +2470,20 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         if (!cameFromBackground && reachedHome && !closed && !drag.isActive) {
             val action = HomeButtonAction.effective(prefs.homeButtonAction, prefs.homeSearch)
             if (action != GestureAction.NONE) actions.run(GestureBinding(action))
+        }
+    }
+
+    // JP fork: the search bar's magnifying glass opens Google's search box,
+    // else the Google app, else google.com.
+    private fun openGoogleSearch() {
+        val google = "com.google.android.googlequicksearchbox"
+        val tries = listOfNotNull(
+            Intent("android.search.action.GLOBAL_SEARCH").setPackage(google),
+            packageManager.getLaunchIntentForPackage(google),
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/"))
+        )
+        for (intent in tries) {
+            if (runCatching { startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
         }
     }
 
