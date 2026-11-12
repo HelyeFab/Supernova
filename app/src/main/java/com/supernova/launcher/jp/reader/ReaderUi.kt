@@ -28,6 +28,8 @@ object ReaderUi {
     const val INK = 0xFFEDEAE4.toInt()
     const val MUTED = 0xFF9A9EA3.toInt()
     const val RUBY = 0xFFA9AEB4.toInt()
+    /** English under the sentence: readable, a step back from the Japanese. */
+    const val TRANSLATION = 0xFFC9C5BD.toInt()
     const val ACCENT = 0xFFF4B3A6.toInt()
     const val ON_ACCENT = 0xFF2A1612.toInt()
 

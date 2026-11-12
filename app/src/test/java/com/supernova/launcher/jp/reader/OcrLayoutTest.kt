@@ -29,4 +29,15 @@ class OcrLayoutTest {
         val page = listOf(listOf(Line("見出し", 50)), listOf(Line("本文です。", 44)))
         assertEquals("見出し\n本文です。", OcrLayout.text(page))
     }
+
+    @Test fun `furigana are dropped even when they outnumber the body lines`() {
+        // NHK Easy: every reading comes back as its own short line or block.
+        val page = listOf(
+            listOf(Line("きょうとふかめおかし", 22)), listOf(Line("にち", 21)), listOf(Line("のうか", 22)),
+            listOf(Line("そだ", 21)), listOf(Line("京都府亀岡市で11日、農家で育てている", 46)),
+            listOf(Line("にわとり", 22)), listOf(Line("し", 20)), listOf(Line("み", 21)),
+            listOf(Line("鶏が死んでいるのが見つかりました。", 45)),
+        )
+        assertEquals("京都府亀岡市で11日、農家で育てている鶏が死んでいるのが見つかりました。", OcrLayout.text(page))
+    }
 }

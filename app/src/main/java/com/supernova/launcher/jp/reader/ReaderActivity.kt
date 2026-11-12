@@ -57,6 +57,10 @@ class ReaderActivity : AppCompatActivity() {
     private lateinit var page: LinearLayout
     private lateinit var thumbSlot: FrameLayout
     private lateinit var rendered: TextView
+    private lateinit var translation: TextView
+    private var translating: Job? = null
+    /** Translations already fetched for this text, by sentence. */
+    private val translations = mutableMapOf<String, String>()
     private lateinit var editor: EditText
     private lateinit var editPanel: LinearLayout
     private lateinit var status: TextView
@@ -154,6 +158,11 @@ class ReaderActivity : AppCompatActivity() {
             highlightColor = 0x44F4B3A6
         }
         page.addView(rendered)
+        translation = ReaderUi.text(this, 17f, ReaderUi.TRANSLATION).apply {
+            setLineSpacing(dp(3).toFloat(), 1f); setPadding(0, dp(2), 0, dp(6)); isVisible = false
+            setTextIsSelectable(true)
+        }
+        page.addView(translation)
 
         editPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; isVisible = false }
         editor = EditText(this).apply {
@@ -289,6 +298,7 @@ class ReaderActivity : AppCompatActivity() {
 
     private fun showWelcome() {
         readingTop.isVisible = false; readingBottom.isVisible = false
+        translation.isVisible = false
         sizeWindow()
         rendered.text = getString(R.string.jp_reader_empty_title)
         rendered.textSize = 24f; rendered.typeface = ReaderUi.HEADING
@@ -334,7 +344,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun updateSource(reset: Boolean = true) {
-        if (reset) { sentenceIndex = 0; clearTutor() }
+        if (reset) { sentenceIndex = 0; clearTutor(); translations.clear() }
         sentences = ReaderText.sentences(source)
         sentenceIndex = sentenceIndex.coerceIn(-1, (sentences.size - 1).coerceAtLeast(0))
         editor.setText(source)
@@ -377,6 +387,7 @@ class ReaderActivity : AppCompatActivity() {
         wholeText.isVisible = sentences.size > 1
         wholeText.text = if (sentenceIndex == -1) "One at a time" else "Whole text"
         explainButton.isEnabled = text.isNotBlank(); askButton.isEnabled = text.isNotBlank()
+        translate(text)
         wordDetail.removeAllViews(); vocabulary.removeAllViews()
         if (text.isBlank()) return
         vocabulary.addView(ReaderUi.text(this, 14f, MUTED, "Looking up words…"))
@@ -460,6 +471,25 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    private fun translate(text: String) {
+        translating?.cancel()
+        val wanted = prefs.autoTranslate && prefs.claudeKey.isNotBlank() && text.isNotBlank() && text.length <= 1500
+        translation.isVisible = wanted
+        if (!wanted) return
+        translations[text]?.let { translation.text = it; return }
+        translation.setText(R.string.jp_reader_translating)
+        translating = lifecycleScope.launch {
+            try {
+                val english = ReaderClaude.translate(prefs.claudeKey, prefs.model, text)
+                translations[text] = english
+                if (currentText() == text) translation.text = english
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                translation.text = getString(R.string.jp_reader_translation_failed, error.message ?: "Claude didn't answer.")
+            }
+        }
+    }
+
     private fun speak(text: String, speed: Double) {
         if (text.isBlank()) return
         if (text.length > 1600) { toast("Pick one sentence to listen to, not the whole page."); return }
@@ -532,6 +562,7 @@ class ReaderActivity : AppCompatActivity() {
             closeSettings = null
             scroll.removeAllViews(); scroll.addView(page); scroll.scrollTo(0, 0)
             sizeWindow()
+            if (readingTop.isVisible) translate(currentText())
         }
         closeSettings = ::leave
 
@@ -568,13 +599,16 @@ class ReaderActivity : AppCompatActivity() {
             if (enabled) "On. Needed to read other apps." else "Off. Turn it on to read other apps.",
             if (enabled) "Open" else "Turn on") { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) })
 
-        panel.addView(group("Claude explanations"))
+        panel.addView(group("Claude"))
+        panel.addView(switchRow("Translate each sentence", "Sends the sentence you're reading to Claude", prefs.autoTranslate) { on ->
+            prefs.autoTranslate = on
+        })
         panel.addView(fieldLabel("API key")); panel.addView(key)
         panel.addView(fieldLabel("Model")); panel.addView(model)
 
         panel.addView(ReaderUi.text(this, 13f, MUTED,
             "Reading the screen and looking up words happen on your phone. When you listen, the Japanese goes to " +
-                "AivisSpeech; when you ask for an explanation, it goes to Claude. Screenshots never leave the phone.").apply {
+                "AivisSpeech; for translations and explanations, it goes to Claude. Screenshots never leave the phone.").apply {
             setLineSpacing(dp(3).toFloat(), 1f); setPadding(0, dp(28), 0, 0)
         })
 

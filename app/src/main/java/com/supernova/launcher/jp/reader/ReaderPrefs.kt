@@ -39,6 +39,10 @@ class ReaderPrefs(context: Context) {
     var model: String
         get() = prefs.getString("model", "claude-haiku-4-5") ?: "claude-haiku-4-5"
         set(value) { prefs.edit { putString("model", value.trim()) } }
+    /** Translate each sentence as it opens (sends it to Claude). */
+    var autoTranslate: Boolean
+        get() = prefs.getBoolean("auto_translate", true)
+        set(value) { prefs.edit { putBoolean("auto_translate", value) } }
     var furigana: Boolean
         get() = prefs.getBoolean("furigana", true)
         set(value) { prefs.edit { putBoolean("furigana", value) } }

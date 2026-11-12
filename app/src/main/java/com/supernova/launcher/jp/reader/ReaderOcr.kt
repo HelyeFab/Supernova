@@ -38,13 +38,35 @@ object OcrLayout {
     private val kanaOnly = Regex("^[\\u3040-\\u30FF\\u3000\\s・ー]+$")
 
     fun text(blocks: List<List<Line>>): String {
-        val heights = blocks.flatten().map { it.height }.filter { it > 0 }.sorted()
-        val body = heights.getOrNull(heights.size / 2) ?: 0
+        // Body height comes from lines with kanji: furigana never contain any, and on a page like
+        // NHK Easy the many short reading lines outnumber the real ones, dragging a plain median down.
+        val lines = blocks.flatten().filter { it.height > 0 }
+        val withKanji = lines.filter { line -> line.text.any(ReaderLanguage::isKanji) }.map { it.height }.sorted()
+        val body = withKanji.getOrNull(withKanji.size / 2)
+            ?: lines.map { it.height }.sorted().let { it.getOrNull(it.size * 3 / 4) } ?: 0
         fun isReading(line: Line) =
             body > 0 && line.height in 1 until (body * READING_SCALE).toInt() && kanaOnly.matches(line.text)
-        return blocks.map { lines -> lines.filterNot(::isReading).joinToString("") { it.text.trim() } }
-            .filter { it.isNotBlank() }.joinToString("\n").trim()
+        val kept = blocks.map { lines -> lines.filterNot(::isReading) }.filter { it.isNotEmpty() }
+        val out = StringBuilder()
+        var previous: List<Line>? = null
+        for (lines in kept) {
+            val text = lines.joinToString("") { it.text.trim() }
+            if (text.isBlank()) continue
+            // A block that stops mid-sentence and the next one at the same size are one wrapped
+            // sentence (NHK Easy returns each line as its own block); otherwise a new line.
+            val before = previous
+            val continues = before != null && !out.endsWith(SENTENCE_END) &&
+                kotlin.math.abs(height(before) - height(lines)) <= height(lines) * 0.10f
+            if (out.isNotEmpty() && !continues) out.append('\n')
+            out.append(text)
+            previous = lines
+        }
+        return out.toString().trim()
     }
+
+    private fun height(lines: List<Line>) = lines.maxOf { it.height }
+    private fun StringBuilder.endsWith(chars: String) = isNotEmpty() && this[length - 1] in chars
+    private const val SENTENCE_END = "。！？!?」』）)"
 
     /** Furigana are printed at about half the body size; anything under 65% counts. */
     private const val READING_SCALE = 0.65f

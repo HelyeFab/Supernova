@@ -2,9 +2,9 @@
 <!-- JP fork strings. Kept in their own file so upstream merges of strings.xml stay clean. -->
 <resources>
     <string name="jp_reader_card_action">聞く · 言葉 · 文法　Open the Japanese reader ↗</string>
-    <string name="jp_reader_region_help">Draw a box around the Japanese</string>
-    <string name="jp_reader_region_hint">Drag inside the box to move it, or pull an edge to resize it.</string>
     <string name="jp_reader_welcome">Double-tap the back of the phone over Japanese in any app, then draw a box around it. Or paste text above, or share it here from another app.</string>
+    <string name="jp_reader_translating">Translating…</string>
+    <string name="jp_reader_translation_failed">No translation: %1$s</string>
     <string name="jp_reader_empty_title">Read Japanese from any app</string>
     <string name="jp_reader_invalid_capture">Invalid capture. Double-tap the back to try again.</string>
     <string name="jp_reader_ocr_loading">Reading Japanese on your phone…</string>
