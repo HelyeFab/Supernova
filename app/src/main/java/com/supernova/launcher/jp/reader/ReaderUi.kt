@@ -60,8 +60,11 @@ object ReaderUi {
             Pill.SECONDARY -> { setTextColor(INK); background = pressable(RAISED, r) }
             Pill.QUIET -> { setTextColor(INK); background = pressable(0, r, context.dp(1), LINE) }
         }
-        minHeight = context.dp(46)
-        setPadding(context.dp(18), 0, context.dp(18), 0)
+        // One line, always: the outer screen is narrow and a wrapped label ("Liste / n") breaks
+        // the pill. Set before minHeight - single-line resets it, and the pills collapsed.
+        isSingleLine = true
+        minHeight = context.dp(48); minimumHeight = context.dp(48)
+        setPadding(context.dp(14), 0, context.dp(14), 0)
         isClickable = true; isFocusable = true
         setOnClickListener { onClick() }
     }
@@ -70,9 +73,9 @@ object ReaderUi {
     fun TextView.leadingIcon(icon: Int): TextView = apply {
         val d = androidx.core.content.ContextCompat.getDrawable(context, icon)!!.mutate()
         d.setTint(currentTextColor)
-        val size = context.dp(18); d.setBounds(0, 0, size, size)
+        val size = context.dp(16); d.setBounds(0, 0, size, size)
         setCompoundDrawablesRelative(d, null, null, null)
-        compoundDrawablePadding = context.dp(8)
+        compoundDrawablePadding = context.dp(6)
     }
 
     /** A pill holding only an icon. */

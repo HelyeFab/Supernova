@@ -63,6 +63,9 @@ class ReaderActivity : AppCompatActivity() {
     private lateinit var sentenceBar: SentenceBar
     private lateinit var sentenceLabel: TextView
     private lateinit var wholeText: TextView
+    /** Controls that only make sense once there is text: hidden on the empty screen. */
+    private lateinit var readingTop: LinearLayout
+    private lateinit var readingBottom: LinearLayout
     private lateinit var furiganaChip: TextView
     private lateinit var vocabulary: LinearLayout
     private lateinit var wordDetail: LinearLayout
@@ -171,7 +174,7 @@ class ReaderActivity : AppCompatActivity() {
                 hideKeyboard(); updateSource()
             }, weighted())
             addView(space(10))
-            addView(ReaderUi.pill(context, "Read the selected part") {
+            addView(ReaderUi.pill(context, "Read selected") {
                 val start = minOf(editor.selectionStart, editor.selectionEnd).coerceAtLeast(0)
                 val end = maxOf(editor.selectionStart, editor.selectionEnd).coerceAtLeast(0)
                 if (end <= start) { toast("Select part of the text first."); return@pill }
@@ -180,16 +183,17 @@ class ReaderActivity : AppCompatActivity() {
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
         page.addView(editPanel)
 
+        readingTop = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         // Where am I in the text: one segment per sentence.
         val position = ReaderUi.row(this)
         position.addView(stepper("‹", "Previous sentence") { moveSentence(-1) })
         sentenceBar = SentenceBar(this) { sentenceIndex = it; showSentence() }
         position.addView(sentenceBar, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(6); marginEnd = dp(6) })
         position.addView(stepper("›", "Next sentence") { moveSentence(1) })
-        page.addView(position, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        readingTop.addView(position, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         sentenceLabel = ReaderUi.text(this, 13f, MUTED)
         wholeText = ReaderUi.link(this, "") { toggleAll() }.apply { setPadding(dp(12), dp(6), dp(4), dp(6)) }
-        page.addView(ReaderUi.row(this).apply {
+        readingTop.addView(ReaderUi.row(this).apply {
             setPadding(dp(4), 0, 0, 0)
             addView(sentenceLabel, LinearLayout.LayoutParams(0, -2, 1f))
             addView(wholeText)
@@ -201,35 +205,38 @@ class ReaderActivity : AppCompatActivity() {
         controls.addView(ReaderUi.pill(this, "Slow") { speak(currentText(), 0.8) })
         controls.addView(space(8))
         controls.addView(ReaderUi.iconPill(this, R.drawable.jp_ic_stop, "Stop audio") { Tts.stop(); status.text = "" },
-            LinearLayout.LayoutParams(dp(52), dp(46)))
+            LinearLayout.LayoutParams(dp(52), dp(48)))
         controls.addView(space(8))
         furiganaChip = ReaderUi.pill(this, "あ") {
             prefs.furigana = !prefs.furigana; styleFuriganaChip(); showSentence(clearExplanation = false)
         }.apply { contentDescription = "Show readings above kanji" }
         styleFuriganaChip()
-        controls.addView(furiganaChip)
-        page.addView(controls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+        controls.addView(furiganaChip, LinearLayout.LayoutParams(dp(52), dp(48)))
+        readingTop.addView(controls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+
+        page.addView(readingTop)
 
         status = ReaderUi.text(this, 13f, MUTED).apply { setPadding(0, dp(10), 0, 0) }
         page.addView(status)
 
+        readingBottom = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         wordDetail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        page.addView(wordDetail)
+        readingBottom.addView(wordDetail)
 
-        page.addView(ReaderUi.sectionTitle(this, "Words"))
+        readingBottom.addView(ReaderUi.sectionTitle(this, "Words"))
         vocabulary = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        page.addView(vocabulary)
+        readingBottom.addView(vocabulary)
 
-        page.addView(ReaderUi.sectionTitle(this, "Grammar"))
+        readingBottom.addView(ReaderUi.sectionTitle(this, "Grammar"))
         explainButton = ReaderUi.pill(this, getString(R.string.jp_reader_explain), Pill.QUIET) { explain() }
-        page.addView(explainButton, LinearLayout.LayoutParams(-1, -2))
+        readingBottom.addView(explainButton, LinearLayout.LayoutParams(-1, -2))
         explanation = ReaderUi.text(this, 16f).apply {
             text = ReaderExplanation.render(lastAnswer)
             setTextIsSelectable(true); setLineSpacing(dp(5).toFloat(), 1.1f)
             setPadding(0, dp(14), 0, dp(4))
             isVisible = lastAnswer.isNotBlank()
         }
-        page.addView(explanation)
+        readingBottom.addView(explanation)
         val ask = ReaderUi.row(this).apply {
             background = ReaderUi.rounded(RAISED, dp(26).toFloat())
             setPadding(dp(16), dp(4), dp(5), dp(4))
@@ -242,9 +249,9 @@ class ReaderActivity : AppCompatActivity() {
         ask.addView(question, LinearLayout.LayoutParams(0, -2, 1f))
         askButton = ReaderUi.pill(this, "Ask", Pill.PRIMARY) { explain(question.text.toString().trim()) }
         ask.addView(askButton, LinearLayout.LayoutParams(-2, dp(42)))
-        page.addView(ask, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        readingBottom.addView(ask, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
 
-        page.addView(ReaderUi.row(this).apply {
+        readingBottom.addView(ReaderUi.row(this).apply {
             addView(ReaderUi.link(context, "Edit text") {
                 editPanel.isVisible = true; editor.setText(source); editor.requestFocus()
             })
@@ -253,6 +260,8 @@ class ReaderActivity : AppCompatActivity() {
                     .setType("text/plain").putExtra(Intent.EXTRA_TEXT, currentText()), "Share Japanese"))
             })
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+
+        page.addView(readingBottom)
 
         scroll = ScrollView(this).apply {
             isFillViewport = false; isVerticalScrollBarEnabled = false
@@ -267,19 +276,28 @@ class ReaderActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        sizeWindow()
+    }
+
+    /** Full height while there is something to read; the empty sheet just fits its content. */
+    private fun sizeWindow() {
         val metrics = resources.displayMetrics
-        window.setLayout(minOf(metrics.widthPixels - dp(20), dp(650)), (metrics.heightPixels * 0.88f).toInt())
+        val empty = ::readingTop.isInitialized && !readingTop.isVisible && closeSettings == null
+        window.setLayout(minOf(metrics.widthPixels - dp(20), dp(650)),
+            if (empty) WindowManager.LayoutParams.WRAP_CONTENT else (metrics.heightPixels * 0.88f).toInt())
     }
 
     private fun showWelcome() {
+        readingTop.isVisible = false; readingBottom.isVisible = false
+        sizeWindow()
         rendered.text = getString(R.string.jp_reader_empty_title)
-        rendered.textSize = 22f
+        rendered.textSize = 24f; rendered.typeface = ReaderUi.HEADING
+        rendered.setLineSpacing(0f, 1.1f); rendered.setPadding(0, dp(18), 0, dp(4))
         status.setText(R.string.jp_reader_welcome)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) status.append(" Reading other apps needs Android 11 or later.")
         editPanel.isVisible = true
         sentenceBar.count = 0; sentenceLabel.text = ""; wholeText.isVisible = false
         explainButton.isEnabled = false; askButton.isEnabled = false
-        vocabulary.addView(ReaderUi.text(this, 14f, MUTED, "Words from the sentence appear here."))
     }
 
     private fun loadCapture(readText: Boolean) {
@@ -321,7 +339,11 @@ class ReaderActivity : AppCompatActivity() {
         sentenceIndex = sentenceIndex.coerceIn(-1, (sentences.size - 1).coerceAtLeast(0))
         editor.setText(source)
         editPanel.isVisible = false
-        rendered.textSize = 27f
+        readingTop.isVisible = true; readingBottom.isVisible = true
+        sizeWindow()
+        rendered.textSize = 27f; rendered.typeface = Typeface.DEFAULT
+        rendered.setLineSpacing(rendered.textSize * RubySpan.FURIGANA_SPACING, 1.05f)
+        rendered.setPadding(0, (rendered.textSize * RubySpan.FURIGANA_SPACING).toInt() + dp(8), 0, dp(6))
         status.text = ""
         showSentence(clearExplanation = reset)
     }
@@ -369,7 +391,7 @@ class ReaderActivity : AppCompatActivity() {
                     }, word.start, word.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
                 if (prefs.furigana) readings.forEach { word ->
-                    word.reading?.let { annotated.setSpan(RubySpan(it, rubyColor = ReaderUi.RUBY), word.start, word.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
+                    word.reading?.let { annotated.setSpan(RubySpan(it, rubyColor = ReaderUi.RUBY, overhang = 0.9f), word.start, word.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
                 }
                 rendered.text = annotated
                 val entries = withContext(Dispatchers.IO) {
@@ -509,6 +531,7 @@ class ReaderActivity : AppCompatActivity() {
             hideKeyboard()
             closeSettings = null
             scroll.removeAllViews(); scroll.addView(page); scroll.scrollTo(0, 0)
+            sizeWindow()
         }
         closeSettings = ::leave
 
@@ -558,6 +581,7 @@ class ReaderActivity : AppCompatActivity() {
         ReaderOverlay.calibrating = true
         if (probe.available) probe.start(prefs.backTapThreshold, screenGated = false)
         scroll.removeAllViews(); scroll.addView(panel); scroll.scrollTo(0, 0)
+        sizeWindow()
     }
 
     private fun group(title: String) = ReaderUi.text(this, 19f, INK, title).apply {

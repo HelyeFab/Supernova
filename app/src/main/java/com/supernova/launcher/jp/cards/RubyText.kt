@@ -14,21 +14,29 @@ class RubySpan(
     private val scale: Float = 0.5f,
     /** Reading colour; null draws it in the base text's colour. */
     private val rubyColor: Int? = null,
+    /**
+     * How far (in ems of the base text, both sides together) a long reading may hang over
+     * the neighbouring kana instead of pushing them apart: 美しい stays 美しい, not 美 しい.
+     */
+    private val overhang: Float = 0f,
 ) : ReplacementSpan() {
 
     override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
         val base = paint.measureText(text, start, end)
         val small = Paint(paint).apply { textSize = paint.textSize * scale }
         fm?.let { paint.getFontMetricsInt(it) }
-        return maxOf(base, small.measureText(reading)).toInt()
+        return maxOf(base, small.measureText(reading) - overhang * paint.textSize).toInt()
     }
 
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
         val base = paint.measureText(text, start, end)
         val small = Paint(paint).apply { textSize = paint.textSize * scale; rubyColor?.let { color = it } }
-        val width = maxOf(base, small.measureText(reading))
+        val width = maxOf(base, small.measureText(reading) - overhang * paint.textSize)
         canvas.drawText(text, start, end, x + (width - base) / 2, y.toFloat(), paint)
-        canvas.drawText(reading, x + (width - small.measureText(reading)) / 2, y + paint.ascent() - small.descent(), small)
+        // Centred over the base; may extend past the span by up to half the overhang each side,
+        // except at the start of a line (x = 0), where the TextView would clip it.
+        val rubyX = (x + (width - small.measureText(reading)) / 2).coerceAtLeast(0f)
+        canvas.drawText(reading, rubyX, y + paint.ascent() - small.descent(), small)
     }
 
     companion object {

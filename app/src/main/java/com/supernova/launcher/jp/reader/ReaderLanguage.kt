@@ -48,8 +48,24 @@ object ReaderLanguage {
     fun readings(text: String): List<Word> = tokenizer.tokenize(text).mapNotNull { token ->
         val reading = token.reading.takeUnless { it.isNullOrBlank() || it == "*" } ?: return@mapNotNull null
         if (token.surface.none(::isKanji)) return@mapNotNull null
-        Word(token.position, token.position + token.surface.length, token.surface, token.surface,
-            hiragana(reading), token.partOfSpeechLevel1)
+        val (from, to, ruby) = rubyCore(token.surface, hiragana(reading))
+        Word(token.position + from, token.position + to, token.surface.substring(from, to), token.surface,
+            ruby, token.partOfSpeechLevel1)
+    }
+
+    /**
+     * The part of a word the reading belongs over: kana the word shares with its reading at
+     * either end stay bare. 見る/みる → 見 (み); 美しい/うつくしい → 美 (うつく); お茶/おちゃ → 茶 (ちゃ).
+     * Returns the start and end within [surface] and the trimmed reading.
+     */
+    fun rubyCore(surface: String, reading: String): Triple<Int, Int, String> {
+        val word = hiragana(surface)
+        var head = 0
+        while (head < word.length - 1 && head < reading.length - 1 && !isKanji(surface[head]) && word[head] == reading[head]) head++
+        var tail = 0
+        while (tail < word.length - head - 1 && tail < reading.length - head - 1 &&
+            !isKanji(surface[surface.length - 1 - tail]) && word[word.length - 1 - tail] == reading[reading.length - 1 - tail]) tail++
+        return Triple(head, surface.length - tail, reading.substring(head, reading.length - tail))
     }
 
     fun hiragana(text: String): String = text.map { if (it in 'ァ'..'ヶ') it - 0x60 else it }.joinToString("")

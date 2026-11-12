@@ -30,4 +30,12 @@ class ReaderLanguageTest {
         assertEquals(listOf("「日本語を読む。」", "楽しい！", "次の行"), ReaderText.sentences("「日本語を読む。」楽しい！\n次の行"))
         assertEquals(emptyList<String>(), ReaderText.sentences(" \n "))
     }
+
+    @Test fun `furigana sit over the kanji only`() {
+        assertEquals(Triple(0, 1, "み"), ReaderLanguage.rubyCore("見る", "みる"))
+        assertEquals(Triple(0, 1, "うつく"), ReaderLanguage.rubyCore("美しい", "うつくしい"))
+        assertEquals(Triple(1, 2, "ちゃ"), ReaderLanguage.rubyCore("お茶", "おちゃ"))
+        assertEquals(Triple(0, 2, "けしき"), ReaderLanguage.rubyCore("景色", "けしき"))
+        assertEquals(Triple(0, 3, "きょうとふ"), ReaderLanguage.rubyCore("京都府", "きょうとふ"))
+    }
 }

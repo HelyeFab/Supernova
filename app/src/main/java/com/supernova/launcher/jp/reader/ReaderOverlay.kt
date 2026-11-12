@@ -282,27 +282,37 @@ private class RegionView(
     init {
         setWillNotDraw(false)
         isFocusableInTouchMode = true
-        val help = TextView(context).apply {
-            setText(R.string.jp_reader_region_help)
-            textSize = 16f; gravity = Gravity.CENTER
-            setTextColor(Color.WHITE); setBackgroundColor(0xEE203D37.toInt())
+        // Same sumi sheet and pills as the reader, floating clear of the system bars.
+        val help = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            background = ReaderUi.rounded(ReaderUi.SHEET, dp(22).toFloat(), dp(1), ReaderUi.LINE)
+            setPadding(dp(18), dp(12), dp(18), dp(12))
+            addView(ReaderUi.text(context, 16f, ReaderUi.INK, context.getString(R.string.jp_reader_region_help)).apply {
+                typeface = ReaderUi.MEDIUM
+            })
+            addView(ReaderUi.text(context, 13f, ReaderUi.MUTED, context.getString(R.string.jp_reader_region_hint)))
         }
-        addView(help, LayoutParams(LayoutParams.MATCH_PARENT, dp(52), Gravity.TOP).apply { topMargin = dp(28) })
+        addView(help, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.TOP).apply {
+            topMargin = dp(52); leftMargin = dp(16); rightMargin = dp(16)
+        })
         val actions = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setBackgroundColor(0xEE203D37.toInt())
+            gravity = Gravity.CENTER_VERTICAL
+            background = ReaderUi.rounded(ReaderUi.SHEET, dp(30).toFloat(), dp(1), ReaderUi.LINE)
+            setPadding(dp(8), dp(8), dp(8), dp(8))
         }
-        fun action(label: String, click: () -> Unit) = TextView(context).apply {
-            text = label; textSize = 14f; gravity = Gravity.CENTER; setTextColor(Color.WHITE)
-            setPadding(dp(8), dp(8), dp(8), dp(8)); setOnClickListener { click() }
-        }
-        fun actionParams() = android.widget.LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1f)
-        actions.addView(action("Cancel") { onCancel() }, actionParams())
-        actions.addView(action("Whole screen") { selection.set(0f, 0f, width.toFloat(), height.toFloat()); submit() }, actionParams())
-        read = action("Read selection") { submit() }.apply { isEnabled = false; alpha = 0.4f }
-        actions.addView(read, actionParams())
-        addView(actions, LayoutParams(LayoutParams.MATCH_PARENT, dp(60), Gravity.BOTTOM).apply { bottomMargin = dp(28) })
+        fun gap() = View(context).apply { layoutParams = android.widget.LinearLayout.LayoutParams(dp(8), 1) }
+        actions.addView(ReaderUi.pill(context, "Cancel", ReaderUi.Pill.QUIET) { onCancel() },
+            android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        actions.addView(gap())
+        actions.addView(ReaderUi.pill(context, "Whole screen") { selection.set(0f, 0f, width.toFloat(), height.toFloat()); submit() },
+            android.widget.LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        actions.addView(gap())
+        read = ReaderUi.pill(context, "Read", ReaderUi.Pill.PRIMARY) { submit() }.apply { isEnabled = false; alpha = 0.4f }
+        actions.addView(read, android.widget.LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        addView(actions, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM).apply {
+            bottomMargin = dp(36); leftMargin = dp(16); rightMargin = dp(16)
+        })
         setOnKeyListener { _, key, event ->
             if (key == android.view.KeyEvent.KEYCODE_BACK && event.action == android.view.KeyEvent.ACTION_UP) {
                 onCancel(); true
@@ -320,7 +330,7 @@ private class RegionView(
         canvas.drawRect(0f, selection.top, selection.left, selection.bottom, paint)
         canvas.drawRect(selection.right, selection.top, width.toFloat(), selection.bottom, paint)
         if (!selection.isEmpty) {
-            paint.color = 0xFFE3C99C.toInt(); paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(2).toFloat()
+            paint.color = ReaderUi.ACCENT; paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(2).toFloat()
             canvas.drawRoundRect(selection, dp(4).toFloat(), dp(4).toFloat(), paint)
             paint.style = Paint.Style.FILL
             // Corner handles: hints that the box can be pulled and moved.
