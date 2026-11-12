@@ -46,8 +46,23 @@ class ReaderOverlay(private val service: AccessibilityService) {
     private var busy = false
     private var destroyed = false
     // Double knock on the back of the phone opens the region selector (the default way in).
-    private val backTap = BackTapSensor(service, onDoubleTap = { if (!calibrating) { buzz(); capture() } })
     private val displays = service.getSystemService(DisplayManager::class.java)
+    private val knockLog = BackTapLog(service)
+    private val backTap = BackTapSensor(service,
+        onDoubleTap = {
+            val outcome = when { calibrating -> "dbl-test"; busy -> "dbl-busy"; else -> "DOUBLE" }
+            knockLog.add(outcome, screen = screenName(), threshold = prefs.backTapThreshold)
+            if (!calibrating) { buzz(); capture() }
+        },
+        onKnock = { peak -> knockLog.add("knock", peak, screenName(), prefs.backTapThreshold) })
+
+    /** Which screen is on: the Honor's outer (folded) or inner (unfolded) display, by width. */
+    private fun screenName(): String {
+        val display = displays.displays.firstOrNull { it.state == Display.STATE_ON } ?: return "off"
+        val metrics = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") display.getRealMetrics(it) }
+        val shortSide = minOf(metrics.widthPixels, metrics.heightPixels) / metrics.density
+        return if (shortSide > 600) "unfolded" else "folded"
+    }
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) = refresh()
         override fun onDisplayRemoved(displayId: Int) = refresh()
@@ -232,6 +247,7 @@ class ReaderOverlay(private val service: AccessibilityService) {
         handler.removeCallbacksAndMessages(null)
         displays.unregisterDisplayListener(displayListener)
         backTap.stop()
+        knockLog.close()
         removeButton(); removeSelector(); scope.cancel()
     }
 }

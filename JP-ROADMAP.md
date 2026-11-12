@@ -146,3 +146,8 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
   panel (mutes real captures while open), and the floating 読 button as an optional extra. One-time
   pref migration turns back tap on and the floating button off. TODO: tune thresholds from real
   knocks on the Honor (folded and unfolded), check false triggers on walks and table set-downs.
+- Knock log (2026-11-12): the background listener writes every knock (peak m/s², folded/unfolded,
+  threshold) and every double (`DOUBLE`, `dbl-test` while the settings test is open, `dbl-busy`) to
+  `no_backup/backtap.log` — read it with
+  `adb shell run-as dev.fabiani.supernova.debug cat no_backup/backtap.log`. Tune thresholds from it.
+  Reader settings is an in-sheet panel now (an AlertDialog there crashed the launcher process).

@@ -393,14 +393,14 @@ class ReaderActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(8))
         }
         val backTap = android.widget.CheckBox(this).apply {
-            setText(R.string.jp_reader_back_tap)
+            setText(R.string.jp_reader_back_tap); setTextColor(INK)
             isChecked = prefs.backTap
         }
         content.addView(backTap)
         val sensitivity = android.widget.RadioGroup(this).apply {
             orientation = LinearLayout.HORIZONTAL
             listOf("Firm knock", "Normal", "Light knock").forEachIndexed { index, name ->
-                addView(android.widget.RadioButton(this@ReaderActivity).apply { text = name; id = 100 + index })
+                addView(android.widget.RadioButton(this@ReaderActivity).apply { text = name; id = 100 + index; setTextColor(INK) })
             }
             check(100 + prefs.backTapSensitivity)
         }
@@ -424,7 +424,7 @@ class ReaderActivity : AppCompatActivity() {
         else test.setText(R.string.jp_reader_back_tap_unavailable)
         sensitivity.setOnCheckedChangeListener { _, id -> probe.start(thresholdFor(id), screenGated = false) }
         val enabled = android.widget.CheckBox(this).apply {
-            setText(R.string.jp_reader_floating)
+            setText(R.string.jp_reader_floating); setTextColor(INK)
             isChecked = prefs.floating
         }
         content.addView(enabled)
@@ -436,11 +436,11 @@ class ReaderActivity : AppCompatActivity() {
         val key = EditText(this).apply {
             setSingleLine(); inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             transformationMethod = PasswordTransformationMethod.getInstance()
-            setText(prefs.claudeKey); importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            setText(prefs.claudeKey); setTextColor(INK); importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }
         content.addView(key)
         content.addView(label("Claude model", 13f, MUTED))
-        val model = EditText(this).apply { setSingleLine(); setText(prefs.model) }
+        val model = EditText(this).apply { setSingleLine(); setText(prefs.model); setTextColor(INK) }
         content.addView(model)
         // Shown inside the reader sheet, not as an AlertDialog: the sheet's floating-window
         // theme can't resolve textColorLink for an alert title, and that crash took down the
