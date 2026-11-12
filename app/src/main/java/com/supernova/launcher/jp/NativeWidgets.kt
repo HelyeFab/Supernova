@@ -40,6 +40,10 @@ object NativeWidgets {
     )
 
     private val specs = listOf(
+        // List mode's home page (placed by the setting, not offered in the picker).
+        Spec(com.supernova.launcher.jp.list.ListHomeView.KIND, R.string.jp_list_mode, R.drawable.ic_jp_torii, 5, 6) { c, _ ->
+            com.supernova.launcher.jp.list.ListHomeView(c)
+        },
         // Word of the day + Struggle in one slot, rotated with a vertical swipe.
         Spec(StackWidgetView.KIND, R.string.jp_widget_stack, R.drawable.ic_jp_torii, 4, 3) { c, item ->
             StackWidgetView(c, item.id, listOf(WordOfDayView(c), com.supernova.launcher.jp.struggle.StruggleWidgetView(c)))
@@ -130,7 +134,7 @@ object NativeWidgets {
                 icon = context.getDrawable(R.drawable.ic_jp_torii)?.let(icons.render),
                 target = ShortcutTarget.Native(JAPANESE_FOLDER)
             )
-        ) + specs.map { spec ->
+        ) + specs.filter { it.kind != com.supernova.launcher.jp.list.ListHomeView.KIND }.map { spec ->
             WidgetPickerEntry.Shortcut(
                 packageName = context.packageName,
                 label = context.getString(spec.label),

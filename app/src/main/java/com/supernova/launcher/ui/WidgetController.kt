@@ -596,7 +596,9 @@ class WidgetController(
     fun buildWidgetView(item: LauncherItem): View {
         if (com.supernova.launcher.jp.NativeWidgets.isNative(item.widgetProvider)) {
             return com.supernova.launcher.jp.NativeWidgets.create(activity, item).also { view ->
-                if (view is com.supernova.launcher.jp.StackWidgetView) nativeOwners += view
+                if (view is com.supernova.launcher.jp.StackWidgetView || view is com.supernova.launcher.jp.list.ListHomeView) {
+                    nativeOwners += view
+                }
                 view.setOnLongClickListener { v ->
                     host.onWidgetLongPress(v, item)
                     true

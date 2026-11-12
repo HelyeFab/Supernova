@@ -53,6 +53,8 @@ class ActionRunner(
     fun runGesture(gesture: Gesture): Boolean {
         val prefs = viewModel.state.value.prefs
         val bound = GestureDefaults.decode(prefs.gestureBindings)[gesture] ?: GestureBinding(GestureAction.NONE)
+        // JP fork: list mode turns the drawer gesture off.
+        if (prefs.listMode && bound.action == GestureAction.OPEN_DRAWER) return false
         // The Expand notifications haptic: a tick as the swipe pulls the
         // shade down.
         val pullsShade = gesture == Gesture.SWIPE_DOWN && bound.action == GestureAction.EXPAND_NOTIFICATIONS

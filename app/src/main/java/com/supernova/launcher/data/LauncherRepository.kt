@@ -629,6 +629,55 @@ class LauncherRepository(private val context: Context) {
         }
     }
 
+    // JP fork, list mode: a new first page holding only the list widget, made
+    // the home page; every other page moves one along. Returns the home page
+    // before, for turning it off. Already there: just made home again.
+    suspend fun enableListPage(provider: String, label: String, cols: Int, rows: Int): Int {
+        var previous = 0
+        mutate { current ->
+            previous = current.defaultPage
+            val existing = current.items.firstOrNull { it.widgetProvider == provider }
+            if (existing != null) return@mutate current.copy(defaultPage = existing.page)
+            val shifted = current.items.map {
+                if (it.container == ContainerType.WORKSPACE) it.copy(page = it.page + 1) else it
+            }
+            val list = LauncherItem(
+                id = id(), itemType = ItemType.WIDGET, container = ContainerType.WORKSPACE,
+                page = 0, cellX = 0, cellY = 0, spanX = cols, spanY = rows,
+                widgetProvider = provider, label = label
+            )
+            current.copy(
+                items = shifted + list,
+                pageCount = (current.pageCount + 1).coerceAtMost(MAX_PAGES),
+                defaultPage = 0
+            )
+        }
+        // The page numbers moved up by one; the caller restores this later.
+        return previous + 1
+    }
+
+    // Removes the list widget and its page (when nothing else is on it), and
+    // makes [homePage] (numbered with the list page still there) home again.
+    suspend fun disableListPage(provider: String, homePage: Int) {
+        mutate { current ->
+            val list = current.items.firstOrNull { it.widgetProvider == provider } ?: return@mutate current
+            val page = list.page
+            val rest = current.items - list
+            val pageEmpty = rest.none { it.container == ContainerType.WORKSPACE && it.page == page }
+            if (!pageEmpty || current.pageCount <= 1) {
+                return@mutate current.copy(items = rest, defaultPage = homePage.coerceIn(0, current.pageCount - 1))
+            }
+            val home = if (homePage > page) homePage - 1 else homePage
+            current.copy(
+                items = rest.map {
+                    if (it.container == ContainerType.WORKSPACE && it.page > page) it.copy(page = it.page - 1) else it
+                },
+                pageCount = current.pageCount - 1,
+                defaultPage = home.coerceIn(0, current.pageCount - 2)
+            )
+        }
+    }
+
     suspend fun setDefaultPage(page: Int) {
         mutate { current -> current.copy(defaultPage = page.coerceIn(0, current.pageCount - 1)) }
     }

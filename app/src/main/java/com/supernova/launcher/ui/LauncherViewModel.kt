@@ -1251,6 +1251,34 @@ class LauncherViewModel(
 
     fun addPage() = persist { repository.addPage() }
 
+    // JP fork: list mode on/off. On: the list page goes first and becomes home,
+    // favourites seeded from the most launched apps when there are none yet.
+    fun setListMode(on: Boolean) {
+        val prefs = state.value.prefs
+        val provider = com.supernova.launcher.jp.NativeWidgets.provider(com.supernova.launcher.jp.list.ListHomeView.KIND)
+        viewModelScope.launch {
+            if (on) {
+                val previous = repository.enableListPage(provider, "List", prefs.gridCols, prefs.gridRows)
+                preferences.set(Pref.listPrevPage, previous)
+                if (prefs.listFavorites.isBlank()) {
+                    val counts = launchCounts()
+                    val seed = visibleApps().sortedByDescending { counts[hiddenKey(it)] ?: 0 }
+                        .take(LIST_SEED_FAVOURITES).map(::hiddenKey)
+                    preferences.set(Pref.listFavorites, seed.joinToString("\n"))
+                }
+                preferences.set(Pref.listMode, true)
+            } else {
+                preferences.set(Pref.listMode, false)
+                repository.disableListPage(provider, prefs.listPrevPage)
+            }
+        }
+    }
+
+    fun listFavourites(): List<String> =
+        state.value.prefs.listFavorites.split('\n').filter { it.isNotBlank() }
+
+    fun setListFavourites(keys: List<String>) = set(Pref.listFavorites, keys.distinct().joinToString("\n"))
+
     fun removePage(page: Int, onRemoved: (() -> Unit)? = null) {
         viewModelScope.launch { if (repository.removePage(page)) onRemoved?.invoke() }
     }
@@ -1376,6 +1404,7 @@ class LauncherViewModel(
     }
 
     private companion object {
+        const val LIST_SEED_FAVOURITES = 7
         // The icon size settings' top.
         const val MAX_ICON_RESOLUTION = 2f
         // How long a package-callback rescan waits for its burst to settle.

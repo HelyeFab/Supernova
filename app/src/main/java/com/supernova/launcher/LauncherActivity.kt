@@ -125,7 +125,8 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDragController.Host, WidgetController.Host {
+class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDragController.Host, WidgetController.Host,
+    com.supernova.launcher.jp.list.ListHost {
 
     private lateinit var binding: ActivityLauncherBinding
     private val viewModel: LauncherViewModel by viewModels { LauncherViewModel.Factory(appGraph) }
@@ -322,6 +323,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
     // needs no conversion. Read by the item menus when they open. A drawer
     // folder's card, its own full-screen window, sets it too (routeItemGesture).
     private var menuTouchX = 0f
+    private val LIST_SHORTCUTS = 5
     // Edit mode's "+" page asked for a real page, maybe with a pick from the
     // sheet to land on it. Once the model carries the page, edit mode closes
     // there; the pick waits one emission more, for the current page to be
@@ -724,6 +726,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
                     // diffs against what is really on screen rather than
                     // against nothing.
                     renderedBadges = badges
+                    if (viewModel.state.value.prefs.listMode) com.supernova.launcher.jp.list.ListBus.changed()
                     // A StateFlow replays its value to every new collector,
                     // and this one is re-collected on every onStart: without
                     // this, every return to the home screen tore the whole
@@ -1125,6 +1128,8 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         if (::editMode.isInitialized && editMode.isOpen) return false
         if (desktopPreviews.isShowing) return false
         if (drag.isArmed || drag.activeItemPopup != null) return false
+        // JP fork: list mode has no swipe-up drawer - the list holds every app.
+        if (viewModel.state.value.prefs.listMode) return false
         return GestureDefaults.swipeUpOpensDrawer(viewModel.state.value.prefs.gestureBindings)
     }
 
@@ -1663,6 +1668,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
                     // The stateIn placeholder would paint an empty workspace
                     // for one frame before the real layout decodes.
                     if (!state.loaded) return@collect
+                    if (state.prefs.listMode) com.supernova.launcher.jp.list.ListBus.changed()
                     widgets.rebindRestoredWidgets(state.model)
                     ThemeEngine.applyMode(this@LauncherActivity, state.prefs)
                     if (state.prefs.accentColor != appliedAccent) {
@@ -1878,7 +1884,8 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         renderedDock = key
         val prefs = state.prefs
         binding.dockBar.removeAllViews()
-        if (!prefs.dockEnabled) {
+        // JP fork: no dock in list mode.
+        if (!prefs.dockEnabled || prefs.listMode) {
             applyDockChrome(prefs)
             return
         }
@@ -2102,7 +2109,7 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         appliedDockChrome = key
 
         binding.dockBar.visibility =
-            if (prefs.dockEnabled && !dockAutoClosed && !dockToggledOff) View.VISIBLE else View.GONE
+            if (prefs.dockEnabled && !prefs.listMode && !dockAutoClosed && !dockToggledOff) View.VISIBLE else View.GONE
         syncSwipeArrow(prefs)
         binding.scrimTop.visibility = if (prefs.showScrims) View.VISIBLE else View.GONE
         binding.scrimBottom.visibility = if (prefs.showScrims) View.VISIBLE else View.GONE
@@ -2920,6 +2927,8 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
                 }
             }
         }
+        // JP fork: favourites rows for the list page.
+        if (viewModel.state.value.prefs.listMode) addListFavouriteRows(menu, app)
         menu.show(anchor, menuTouchX)
         return menu
     }
@@ -4297,6 +4306,64 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
     }
 
     override fun pickShortcutTarget(target: com.supernova.launcher.ui.ShortcutTarget) = shortcutPlacer.pick(target)
+
+    // ---- JP fork: ListHost (the list-mode home page)
+
+    override fun listApps(): List<LaunchableApp> = viewModel.visibleApps()
+
+    override fun listFavourites(): List<String> = viewModel.listFavourites()
+
+    override fun appKey(app: LaunchableApp): String = viewModel.hiddenKey(app)
+
+    override fun appIcon(app: LaunchableApp): android.graphics.drawable.Drawable? =
+        itemIcons.withBadge(viewModel.appCatalog().iconFor(app), app.packageName, app.className, app.userSerial)
+
+    override fun launchFromList(app: LaunchableApp, anchor: View) = launchApp(app, anchor)
+
+    override fun showListAppMenu(anchor: View, app: LaunchableApp) {
+        drag.activeItemPopup = showDrawerItemMenu(anchor, app)
+    }
+
+    // Swipe right on a list app: its notifications and shortcuts, which launch.
+    override fun showListShortcuts(anchor: View, app: LaunchableApp) {
+        val menu = newItemPopup(forItem = true)
+        addNotificationRows(menu, app.packageName, app.userSerial)
+        shortcutsFor(app.packageName, app.userSerial).take(LIST_SHORTCUTS).forEach { shortcut ->
+            menu.addShortcut(shortcut.shortLabel ?: shortcut.longLabel ?: shortcut.id, shortcutIcon(shortcut)) {
+                launchShortcut(app.packageName, shortcut.id, app.userSerial, anchor)
+                menu.dismiss()
+            }
+        }
+        addListFavouriteRows(menu, app)
+        menu.show(anchor, anchor.width * 0.3f)
+        drag.activeItemPopup = menu
+    }
+
+    override fun notificationsFor(app: LaunchableApp): List<com.supernova.launcher.notification.NotificationPreview> {
+        val user = viewModel.appCatalog().userForSerial(app.userSerial) ?: Process.myUserHandle()
+        return com.supernova.launcher.notification.SupernovaNotificationListener.previewsFor(app.packageName, user.hashCode())
+    }
+
+    private fun addListFavouriteRows(menu: SupernovaPopupMenu, app: LaunchableApp) {
+        val key = viewModel.hiddenKey(app)
+        val favs = viewModel.listFavourites()
+        val at = favs.indexOf(key)
+        if (at < 0) {
+            menu.addRow(getString(R.string.jp_list_favourite_add), R.drawable.ic_menu_add) {
+                viewModel.setListFavourites(favs + key)
+            }
+            return
+        }
+        if (at > 0) menu.addRow(getString(R.string.jp_list_move_up), R.drawable.ic_menu_resize) {
+            viewModel.setListFavourites(favs.toMutableList().apply { add(at - 1, removeAt(at)) })
+        }
+        if (at < favs.size - 1) menu.addRow(getString(R.string.jp_list_move_down), R.drawable.ic_menu_resize) {
+            viewModel.setListFavourites(favs.toMutableList().apply { add(at + 1, removeAt(at)) })
+        }
+        menu.addRow(getString(R.string.jp_list_favourite_remove), R.drawable.ic_menu_remove) {
+            viewModel.setListFavourites(favs - key)
+        }
+    }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -19,7 +19,9 @@ data class NotificationPreview(
     val title: String,
     val text: String,
     val contentIntent: PendingIntent?,
-    val postTime: Long
+    val postTime: Long,
+    // JP fork: for dismissing it from the list page.
+    val key: String? = null
 )
 
 // What a Dynamic badge shows for an app: its newest badged notification's
@@ -58,11 +60,13 @@ class SupernovaNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         connected = true
+        instance = this
         refresh()
     }
 
     override fun onListenerDisconnected() {
         connected = false
+        instance = null
         handler.removeCallbacks(refreshRunnable)
         state.value = BadgeState()
         previews = emptyMap()
@@ -170,7 +174,8 @@ class SupernovaNotificationListener : NotificationListenerService() {
             title = title,
             text = text,
             contentIntent = sbn.notification.contentIntent,
-            postTime = sbn.postTime
+            postTime = sbn.postTime,
+            key = sbn.key
         )
     }
 
@@ -206,5 +211,13 @@ class SupernovaNotificationListener : NotificationListenerService() {
 
         fun previewsFor(packageName: String, userHash: Int): List<NotificationPreview> =
             previews["$userHash/$packageName"].orEmpty()
+
+        @Volatile
+        private var instance: SupernovaNotificationListener? = null
+
+        // JP fork: dismiss one notification (swipe on the list page).
+        fun dismiss(key: String) {
+            runCatching { instance?.cancelNotification(key) }
+        }
     }
 }

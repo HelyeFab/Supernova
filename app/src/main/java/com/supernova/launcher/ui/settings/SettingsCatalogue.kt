@@ -400,6 +400,12 @@ object SettingsCatalogue {
                     subtitle = R.string.page_indicator_auto_hide_summary
                 ),
                 SettingItem.Toggle(
+                        R.string.jp_list_mode,
+                        get = { it.listMode },
+                        set = { viewModel.setListMode(it) },
+                        subtitle = R.string.jp_list_mode_summary
+                    ),
+                    SettingItem.Toggle(
                     R.string.infinite_scroll,
                     get = { it.infiniteScroll },
                     set = { viewModel.set(Pref.infiniteScroll, it) }

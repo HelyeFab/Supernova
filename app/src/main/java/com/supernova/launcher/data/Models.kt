@@ -171,6 +171,12 @@ data class LauncherPrefs(
     // arrow is.
     val pageIndicatorColor: String = "",
     val infiniteScroll: Boolean = false,
+    // JP fork, list mode: a Niagara-style list page is the home page, the dock
+    // and the swipe-up drawer are off. Favourites: hiddenKey()s in order, one
+    // per line. listPrevPage: the home page to go back to when it is turned off.
+    val listMode: Boolean = false,
+    val listFavorites: String = "",
+    val listPrevPage: Int = 0,
     // A page left with nothing on it goes once a drag ends or the pager
     // leaves it; the home page and the page in view always stay.
     val removeEmptyPages: Boolean = true,
