@@ -3,21 +3,15 @@
 <resources>
     <string name="jp_reader_card_action">聞く · 言葉 · 文法　Open the Japanese reader ↗</string>
     <string name="jp_reader_region_help">囲んで読む · Drag around the Japanese, then move or pull the box</string>
-    <string name="jp_reader_welcome">Japanese help in any app. Enable Supernova JP in Accessibility, then double-tap the back of the phone over any Japanese. You can also share text here or use Android’s text-selection menu.</string>
-    <string name="jp_reader_no_text">No text selected</string>
+    <string name="jp_reader_welcome">Double-tap the back of the phone over Japanese in any app, then draw a box around it. You can also paste text below, or share it here from another app.</string>
+    <string name="jp_reader_empty_title">Read Japanese from any app</string>
     <string name="jp_reader_invalid_capture">Invalid capture. Double-tap the back to try again.</string>
     <string name="jp_reader_ocr_loading">Reading Japanese on your phone…</string>
     <string name="jp_reader_ocr_empty">No Japanese text found. Try a tighter region, or enter the text below.</string>
-    <string name="jp_reader_source_hint">Tap a word for its meaning. Check the source against the screen; OCR and automatic readings can be wrong.</string>
     <string name="jp_reader_audio_loading">Preparing audio…</string>
     <string name="jp_reader_audio_error">Audio unavailable: %1$s</string>
-    <string name="jp_reader_audio_done">Tap a word to explore it, or ask Claude about the sentence.</string>
     <string name="jp_reader_explain">Explain with Claude</string>
     <string name="jp_reader_thinking">Claude is thinking…</string>
-    <string name="jp_reader_floating">Also show a floating 読 button in other apps</string>
-    <string name="jp_reader_back_tap">Double-tap the back of the phone to read the screen</string>
-    <string name="jp_reader_back_tap_unavailable">This phone has no accelerometer; use the floating button instead.</string>
-    <string name="jp_reader_back_tap_test">Knock twice on the back here to test. Each knock shows its strength; a recognised double tap shows ✓.</string>
     <string name="jp_reader_title">読む · Japanese reader</string>
     <string name="jp_reader_summary">Read any screen: audio, vocabulary and Claude grammar</string>
     <string name="jp_reader_accessibility_description">Lets Supernova lock the screen from a gesture and, when you double-tap the back of the phone (or tap 読), capture a screen region for Japanese reading. The motion sensor is watched only while the screen is on, for that knock. OCR and dictionary lookups run on your phone. Text is sent to the speech service when you listen, and to Claude only when you ask for an explanation.</string>

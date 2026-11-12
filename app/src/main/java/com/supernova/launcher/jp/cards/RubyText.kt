@@ -9,7 +9,12 @@ import android.text.style.ReplacementSpan
 // JP fork: furigana for TextViews. RubySpan draws its base text with the
 // reading centred above it in a smaller size; the TextView needs line
 // spacing above each line for the readings (see FURIGANA_SPACING).
-class RubySpan(private val reading: String, private val scale: Float = 0.5f) : ReplacementSpan() {
+class RubySpan(
+    private val reading: String,
+    private val scale: Float = 0.5f,
+    /** Reading colour; null draws it in the base text's colour. */
+    private val rubyColor: Int? = null,
+) : ReplacementSpan() {
 
     override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
         val base = paint.measureText(text, start, end)
@@ -20,7 +25,7 @@ class RubySpan(private val reading: String, private val scale: Float = 0.5f) : R
 
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
         val base = paint.measureText(text, start, end)
-        val small = Paint(paint).apply { textSize = paint.textSize * scale }
+        val small = Paint(paint).apply { textSize = paint.textSize * scale; rubyColor?.let { color = it } }
         val width = maxOf(base, small.measureText(reading))
         canvas.drawText(text, start, end, x + (width - base) / 2, y.toFloat(), paint)
         canvas.drawText(reading, x + (width - small.measureText(reading)) / 2, y + paint.ascent() - small.descent(), small)
