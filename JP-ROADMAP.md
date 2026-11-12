@@ -99,3 +99,6 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
 - Search bar: 🔍 opens Google search; new **Claude** chip (mic removed in his settings).
 - Open: list-mode notifications not yet seen live; list-mode OFF path not tested on the phone;
   signed release build (MagicOS still resets the HOME role after installs — check after every install).
+- Later 2026-11-12: list mode left-edge swipe (first 40dp) always opens the cards feed; feed cards
+  recolour to the feed card's text colour (`FeedThemed`, `CardBase.applyFeedColors`); easy news shows 3
+  whole headlines. NHK Easy furigana + ▶ 聞く verified on the phone.
