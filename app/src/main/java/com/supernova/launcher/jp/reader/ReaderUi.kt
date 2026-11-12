@@ -66,6 +66,25 @@ object ReaderUi {
         setOnClickListener { onClick() }
     }
 
+    /** Puts a drawn icon before a pill's label, tinted like its text. */
+    fun TextView.leadingIcon(icon: Int): TextView = apply {
+        val d = androidx.core.content.ContextCompat.getDrawable(context, icon)!!.mutate()
+        d.setTint(currentTextColor)
+        val size = context.dp(18); d.setBounds(0, 0, size, size)
+        setCompoundDrawablesRelative(d, null, null, null)
+        compoundDrawablePadding = context.dp(8)
+    }
+
+    /** A pill holding only an icon. */
+    fun iconPill(context: Context, icon: Int, description: String, onClick: () -> Unit) = ImageView(context).apply {
+        setImageResource(icon); imageTintList = ColorStateList.valueOf(INK)
+        scaleType = ImageView.ScaleType.CENTER
+        background = pressable(RAISED, context.dp(24).toFloat())
+        minimumWidth = context.dp(52); minimumHeight = context.dp(46)
+        contentDescription = description
+        setOnClickListener { onClick() }
+    }
+
     /** Round icon button for the header. */
     fun iconButton(context: Context, icon: Int, description: String, onClick: () -> Unit) = ImageView(context).apply {
         setImageResource(icon); imageTintList = ColorStateList.valueOf(INK)

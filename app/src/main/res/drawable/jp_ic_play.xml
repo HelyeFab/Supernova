@@ -1,0 +1,6 @@
+<!-- JP fork: drawn play glyph (the ▶ character renders as a colour emoji on MagicOS). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6" android:strokeLineJoin="round"
+        android:pathData="M8,5.5L18.5,12L8,18.5Z" />
+</vector>

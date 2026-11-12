@@ -196,11 +196,12 @@ class ReaderActivity : AppCompatActivity() {
         })
 
         val controls = ReaderUi.row(this)
-        controls.addView(ReaderUi.pill(this, "▶  Listen", Pill.PRIMARY) { speak(currentText(), 1.0) }, weighted())
+        controls.addView(with(ReaderUi) { pill(this@ReaderActivity, "Listen", Pill.PRIMARY) { speak(currentText(), 1.0) }.leadingIcon(R.drawable.jp_ic_play) }, weighted())
         controls.addView(space(8))
         controls.addView(ReaderUi.pill(this, "Slow") { speak(currentText(), 0.8) })
         controls.addView(space(8))
-        controls.addView(ReaderUi.pill(this, "■") { Tts.stop(); status.text = "" }.apply { contentDescription = "Stop audio" })
+        controls.addView(ReaderUi.iconPill(this, R.drawable.jp_ic_stop, "Stop audio") { Tts.stop(); status.text = "" },
+            LinearLayout.LayoutParams(dp(52), dp(46)))
         controls.addView(space(8))
         furiganaChip = ReaderUi.pill(this, "あ") {
             prefs.furigana = !prefs.furigana; styleFuriganaChip(); showSentence(clearExplanation = false)
