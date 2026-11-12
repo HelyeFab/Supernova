@@ -45,6 +45,8 @@ class ReaderOverlay(private val service: AccessibilityService) {
     private var selector: RegionView? = null
     private var busy = false
     private var destroyed = false
+    // Double knock on the back of the phone opens the region selector (the default way in).
+    private val backTap = BackTapSensor(service, onDoubleTap = { if (!calibrating) { buzz(); capture() } })
     private val displays = service.getSystemService(DisplayManager::class.java)
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) = refresh()
@@ -58,7 +60,10 @@ class ReaderOverlay(private val service: AccessibilityService) {
     }
 
     fun refresh() {
-        if (destroyed || busy) return
+        if (destroyed) return
+        if (prefs.backTap && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) backTap.start(prefs.backTapThreshold)
+        else backTap.stop()
+        if (busy) return
         removeButton()
         if (!prefs.floating || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
         val display = displays.displays.firstOrNull { it.state == Display.STATE_ON } ?: return
@@ -151,7 +156,7 @@ class ReaderOverlay(private val service: AccessibilityService) {
                         if (bitmap == null) { failed("Could not capture this screen."); return }
                         runCatching { showRegion(display, bitmap) }.onFailure {
                             if (!bitmap.isRecycled) bitmap.recycle()
-                            failed("The display changed during capture. Tap 読 to try again.")
+                            failed("The display changed during capture. Try again.")
                         }
                     }
                     override fun onFailure(errorCode: Int) {
@@ -203,6 +208,13 @@ class ReaderOverlay(private val service: AccessibilityService) {
     private fun openSettings() {
         service.startActivity(Intent(service, ReaderActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
+    private fun buzz() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            service.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+        else @Suppress("DEPRECATION") service.getSystemService(android.os.Vibrator::class.java)
+        runCatching { vibrator?.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK)) }
+    }
     private fun message(text: String) { if (!destroyed) Toast.makeText(service, text, Toast.LENGTH_LONG).show() }
     private fun failed(text: String) { busy = false; message(text); refresh() }
     private fun removeButton() { button?.let { runCatching { manager?.removeViewImmediate(it) } }; button = null }
@@ -210,10 +222,16 @@ class ReaderOverlay(private val service: AccessibilityService) {
         selector?.let { runCatching { manager?.removeViewImmediate(it) }; it.release() }
         selector = null
     }
+    companion object {
+        /** True while Reader settings' knock test is open: knocks there are tests, not captures. */
+        @Volatile var calibrating = false
+    }
+
     fun destroy() {
         destroyed = true
         handler.removeCallbacksAndMessages(null)
         displays.unregisterDisplayListener(displayListener)
+        backTap.stop()
         removeButton(); removeSelector(); scope.cancel()
     }
 }

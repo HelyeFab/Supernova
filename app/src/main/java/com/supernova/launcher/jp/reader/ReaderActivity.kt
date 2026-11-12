@@ -126,7 +126,7 @@ class ReaderActivity : AppCompatActivity() {
         body.addView(status, spaced())
 
         editor = EditText(this).apply {
-            hint = "Paste Japanese here, or tap 読 over another app"
+            hint = "Paste Japanese here, or double-tap the back of the phone over another app"
             textSize = 20f; setTextColor(INK); setHintTextColor(MUTED)
             minLines = 2; maxLines = 8; gravity = Gravity.TOP
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -236,7 +236,7 @@ class ReaderActivity : AppCompatActivity() {
         captureRead = lifecycleScope.launch {
             try {
                 val bitmap = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(File(cacheDir, "reader/$id.png").path) }
-                    ?: error("This capture has expired. Tap 読 to capture it again.")
+                    ?: error("This capture has expired. Double-tap the back to capture it again.")
                 val thumbnail = ImageView(this@ReaderActivity).apply {
                     setImageBitmap(bitmap); adjustViewBounds = true; scaleType = ImageView.ScaleType.FIT_CENTER
                     contentDescription = "Original Japanese screen region"
@@ -387,6 +387,37 @@ class ReaderActivity : AppCompatActivity() {
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(8))
         }
+        val backTap = android.widget.CheckBox(this).apply {
+            setText(R.string.jp_reader_back_tap)
+            isChecked = prefs.backTap
+        }
+        content.addView(backTap)
+        val sensitivity = android.widget.RadioGroup(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            listOf("Firm knock", "Normal", "Light knock").forEachIndexed { index, name ->
+                addView(android.widget.RadioButton(this@ReaderActivity).apply { text = name; id = 100 + index })
+            }
+            check(100 + prefs.backTapSensitivity)
+        }
+        content.addView(sensitivity)
+        // Live test: the panel runs its own listener; the service's knocks are muted meanwhile.
+        val test = label(getString(R.string.jp_reader_back_tap_test), 13f, MUTED).apply { setPadding(0, dp(4), 0, dp(8)) }
+        content.addView(test)
+        val knocks = ArrayDeque<String>()
+        fun thresholdFor(id: Int) = when (id) {
+            100 -> BackTapDetector.SENSITIVITY_LOW; 102 -> BackTapDetector.SENSITIVITY_HIGH
+            else -> BackTapDetector.SENSITIVITY_MEDIUM
+        }
+        val probe = BackTapSensor(this,
+            onDoubleTap = { knocks.addLast("✓ double tap"); test.text = knocks.joinToString("   ") },
+            onKnock = { peak ->
+                knocks.addLast("%.1f".format(peak)); while (knocks.size > 8) knocks.removeFirst()
+                test.text = knocks.joinToString("   ")
+            })
+        ReaderOverlay.calibrating = true
+        if (probe.available) probe.start(thresholdFor(sensitivity.checkedRadioButtonId), screenGated = false)
+        else test.setText(R.string.jp_reader_back_tap_unavailable)
+        sensitivity.setOnCheckedChangeListener { _, id -> probe.start(thresholdFor(id), screenGated = false) }
         val enabled = android.widget.CheckBox(this).apply {
             setText(R.string.jp_reader_floating)
             isChecked = prefs.floating
@@ -407,11 +438,14 @@ class ReaderActivity : AppCompatActivity() {
         val model = EditText(this).apply { setSingleLine(); setText(prefs.model) }
         content.addView(model)
         androidx.appcompat.app.AlertDialog.Builder(this).setTitle("読む · Reader settings").setView(content)
+            .setOnDismissListener { probe.stop(); ReaderOverlay.calibrating = false }
             .setNegativeButton("Cancel", null).setPositiveButton("Save") { _, _ ->
+                prefs.backTap = backTap.isChecked
+                prefs.backTapSensitivity = sensitivity.checkedRadioButtonId - 100
                 prefs.floating = enabled.isChecked; prefs.claudeKey = key.text.toString(); prefs.model = model.text.toString()
                 SupernovaAccessibilityService.refreshReader()
-                if (prefs.floating && !SupernovaAccessibilityService.isEnabled(this)) {
-                    toast("Enable Supernova JP in Accessibility, then tap 読 over your Japanese content.")
+                if ((prefs.floating || prefs.backTap) && !SupernovaAccessibilityService.isEnabled(this)) {
+                    toast("Enable Supernova JP in Accessibility, then double-tap the back over your Japanese content.")
                     startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 }
             }.show()

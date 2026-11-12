@@ -137,3 +137,12 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
   Three targeted Android tests cover OCR, repeated intents/recreation and that dictionary regression.
 - MagicOS can remove Supernova's accessibility entry asynchronously after an update: restore it
   again after the package update settles, preserving other enabled services, and check Bound services.
+- **Back tap replaces the floating button (2026-11-12).** `BackTapDetector` (pure, unit-tested) +
+  `BackTapSensor`: accelerometer at FASTEST (~480 Hz on the Honor's LSM6DSV, via
+  HIGH_SAMPLING_RATE_SENSORS) only while the screen is on. Knock = gravity-removed z spike over the
+  threshold with z ≥ 60% of the motion; double = 90–450 ms gap, phone still before, no third knock
+  within 220 ms, 1 s cooldown. A click haptic confirms, then the region selector opens. Reader
+  Settings: back-tap toggle, Firm/Normal/Light (6 / 4 / 2.5 m/s²), a live knock-strength test
+  panel (mutes real captures while open), and the floating 読 button as an optional extra. One-time
+  pref migration turns back tap on and the floating button off. TODO: tune thresholds from real
+  knocks on the Honor (folded and unfolded), check false triggers on walks and table set-downs.

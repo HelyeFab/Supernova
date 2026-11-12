@@ -45,6 +45,12 @@
          (appops MANAGE_EXTERNAL_STORAGE allow). -->
     <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- JP fork: the reader opens on a double knock on the back of the phone - a short
+         click confirms it, and fast accelerometer sampling catches the knock's peak. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission
+        android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
+        tools:ignore="HighSamplingRate" />
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
