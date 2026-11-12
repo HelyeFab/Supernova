@@ -87,3 +87,15 @@ Hooks in upstream files: `WidgetPickerGroups` (ShortcutTarget.Native), `WidgetPi
 - Signed release build (stop the home-role resets).
 - Optional: jump to the clock page on screen-on; dictionary deinflection; EN→JP lookup.
 
+## 2026-11-12
+- **Drawer theme tabs** (13, before Work): `tools/jp/drawer_groups.py` + debug-only `JpDebugReceiver`
+  (`jp.DUMP_APPS` / `jp.SET_GROUPS`, senders need DUMP = adb). Unplaced: Linksi, Sluka, cuscon, hakuX.
+- **List home mode** (Niagara-style; Settings > Home screen > "List home"): `jp/list/` — `ListHomeView`
+  (serif clock header, favourites, A–Z/#/あ–わ/漢 sections via `ListSections`, scrubber with glide + wave
+  leaning towards the thumb, inline notifications tap/swipe-left dismiss, tap/long-press/swipe-right
+  shortcuts), `ListHost` implemented by LauncherActivity, `ListBus`. Inserted as page 0 widget
+  `native:jp-list`; dock + swipe-up drawer off; search bar at the very bottom; Home scrolls list to top;
+  personal copies preferred over work/App Twin duplicates. Turning it off restores the old home page.
+- Search bar: 🔍 opens Google search; new **Claude** chip (mic removed in his settings).
+- Open: list-mode notifications not yet seen live; list-mode OFF path not tested on the phone;
+  signed release build (MagicOS still resets the HOME role after installs — check after every install).
