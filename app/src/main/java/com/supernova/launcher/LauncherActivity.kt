@@ -981,7 +981,9 @@ class LauncherActivity : AppCompatActivity(), WorkspacePagerAdapter.Host, LiveDr
         if (widgets.trackResizeDrag(ev)) return true
         // JP fork: a swipe that starts on a list-mode app row is the row's.
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            listRowTouch = viewModel.state.value.prefs.listMode && widgets.listRowUnder(ev.rawX, ev.rawY)
+            // ...except from the left edge, which always pulls the cards feed.
+            val fromEdge = ev.rawX < resources.displayMetrics.density * com.supernova.launcher.jp.list.ListHomeView.FEED_EDGE_DP
+            listRowTouch = viewModel.state.value.prefs.listMode && !fromEdge && widgets.listRowUnder(ev.rawX, ev.rawY)
         }
         if (::feed.isInitialized && !(listRowTouch && !feed.isOpen)) {
             when (feed.onTouch(ev)) {

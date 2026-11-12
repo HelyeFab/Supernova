@@ -211,6 +211,7 @@ class ListHomeView(context: Context) : FrameLayout(context) {
         private var downX = 0f
         private var downY = 0f
         private var claimed = false
+        private var edgeStart = false
 
         private val gestures = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent) = true
@@ -231,11 +232,15 @@ class ListHomeView(context: Context) : FrameLayout(context) {
             addView(label, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(14) })
             setOnTouchListener { _, ev ->
                 when (ev.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> { downX = ev.rawX; downY = ev.rawY; claimed = false }
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = ev.rawX; downY = ev.rawY; claimed = false
+                        edgeStart = ev.rawX < dp(FEED_EDGE_DP)
+                    }
                     MotionEvent.ACTION_MOVE -> {
                         val dx = ev.rawX - downX
                         // A rightward drag is ours (shortcuts), not the pager's.
-                        if (!claimed && dx > slop / 2 && dx > abs(ev.rawY - downY)) {
+                        // From the left edge the swipe is the feed pane's, not the row's.
+                        if (!claimed && !edgeStart && dx > slop / 2 && dx > abs(ev.rawY - downY)) {
                             claimed = true
                             parent.requestDisallowInterceptTouchEvent(true)
                             // No long-press menu once the swipe is ours.
@@ -439,6 +444,8 @@ class ListHomeView(context: Context) : FrameLayout(context) {
 
     companion object {
         const val KIND = "jp-list"
+        // A swipe starting this close to the left edge opens the cards feed.
+        const val FEED_EDGE_DP = 40
         private const val STAR = "★"
         private const val CLOCK_DP = 210
         private const val MAX_NOTES = 2
