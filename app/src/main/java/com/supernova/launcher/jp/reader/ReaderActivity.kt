@@ -110,6 +110,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     private fun buildUi() {
+        closeSettings?.invoke()
         body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(22), dp(20), dp(22), dp(24))
@@ -383,7 +384,11 @@ class ReaderActivity : AppCompatActivity() {
         }
     }
 
+    /** Closes the open settings panel (and its knock test); null when none is open. */
+    private var closeSettings: (() -> Unit)? = null
+
     private fun settings() {
+        if (closeSettings != null) return
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(8))
         }
@@ -437,18 +442,33 @@ class ReaderActivity : AppCompatActivity() {
         content.addView(label("Claude model", 13f, MUTED))
         val model = EditText(this).apply { setSingleLine(); setText(prefs.model) }
         content.addView(model)
-        androidx.appcompat.app.AlertDialog.Builder(this).setTitle("読む · Reader settings").setView(content)
-            .setOnDismissListener { probe.stop(); ReaderOverlay.calibrating = false }
-            .setNegativeButton("Cancel", null).setPositiveButton("Save") { _, _ ->
+        // Shown inside the reader sheet, not as an AlertDialog: the sheet's floating-window
+        // theme can't resolve textColorLink for an alert title, and that crash took down the
+        // whole launcher process (the reader shares it with the home screen).
+        content.background = GradientDrawable().apply { cornerRadius = dp(18).toFloat(); setColor(0xFFECE8DA.toInt()) }
+        content.setPadding(dp(16), dp(12), dp(16), dp(12))
+        content.addView(label("読む · Reader settings", 18f), 0)
+        fun close() {
+            probe.stop(); ReaderOverlay.calibrating = false
+            body.removeView(content); closeSettings = null
+        }
+        closeSettings = ::close
+        content.addView(row().apply {
+            addView(button("Cancel") { close() }, weighted())
+            addView(button("Save") {
                 prefs.backTap = backTap.isChecked
                 prefs.backTapSensitivity = sensitivity.checkedRadioButtonId - 100
                 prefs.floating = enabled.isChecked; prefs.claudeKey = key.text.toString(); prefs.model = model.text.toString()
+                close()
                 SupernovaAccessibilityService.refreshReader()
-                if ((prefs.floating || prefs.backTap) && !SupernovaAccessibilityService.isEnabled(this)) {
+                if ((prefs.floating || prefs.backTap) && !SupernovaAccessibilityService.isEnabled(this@ReaderActivity)) {
                     toast("Enable Supernova JP in Accessibility, then double-tap the back over your Japanese content.")
                     startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                }
-            }.show()
+                } else toast("Reader settings saved.")
+            }, weighted())
+        })
+        body.addView(content, 1, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10); bottomMargin = dp(10) })
+        (body.parent as? ScrollView)?.post { (body.parent as ScrollView).smoothScrollTo(0, 0) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -461,6 +481,7 @@ class ReaderActivity : AppCompatActivity() {
     }
 
     override fun onStop() { Tts.stop(); super.onStop() }
+    override fun onDestroy() { closeSettings?.invoke(); super.onDestroy() }
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
     private fun row() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
